@@ -141,16 +141,16 @@ class GameLinker
   # @param genre [String] the name of the genre to attach
   def add_genre(appid, genre)
     g_name = @db.escape(genre)
-    results = @db.query("select genre_id from game_recommender.genre_lookup where genre_name = '#{g_name}'") 
+    results = @db.query("select id from game_recommender.genres where name = '#{g_name}'") 
     genre_id = -1
     if results.size == 0
-      @db.query("insert into game_recommender.genre_lookup (genre_name) values ('#{g_name}')")
+      @db.query("insert into game_recommender.genres (name) values ('#{g_name}')")
       genre_id  = db.client.last_id
     else
       genre_id = results.first['genre_id']
     end 
     begin
-      @db.query("insert into game_recommender.genres (appid, genre_id) values (#{appid}, #{genre_id})")
+      @db.query("insert into game_recommender.genre_mappings (game_appid, genre_id) values (#{appid}, #{genre_id})")
     rescue Mysql2::Error
       # the id already exists so there is nothing to do.
     end

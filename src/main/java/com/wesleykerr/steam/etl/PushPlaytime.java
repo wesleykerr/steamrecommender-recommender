@@ -72,7 +72,7 @@ public class PushPlaytime {
 	}
 	
 	private static final String INSERT = 
-			"insert into game_recommender.gameplay_stats (appid, total, recent) values (?, ?, ?)";
+			"insert into game_recommender.games (appid, total_playtime, recent_playtime) values (?, ?, ?)";
 	private static final String UPDATE = 
-			"update game_recommender.gameplay_stats set total = ?, recent = ? where appid = ?";
+			"update game_recommender.games set total_playtime = ?, recent_playtime = ? where appid = ?";
 }
