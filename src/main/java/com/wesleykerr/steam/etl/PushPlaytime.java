@@ -8,12 +8,11 @@ import org.lightcouch.ViewResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.wesleykerr.steam.api.PlayerInfo;
 import com.wesleykerr.steam.gson.GameplayStats;
 import com.wesleykerr.steam.persistence.mysql.MySQL;
 
 public class PushPlaytime {
-	private static final Logger LOGGER = LoggerFactory.getLogger(PlayerInfo.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(PushPlaytime.class);
 
 	private MySQL sql;
 	private PreparedStatement psInsert;
