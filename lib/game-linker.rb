@@ -114,20 +114,9 @@ class GameLinker
     sql << ", app_type = '#{@db.escape(app_data['type'])}' "
     if app_data['metacritic'] && app_data['metacritic']['url'] && app_data['metacritic']['url'].length > 0
       @log.debug { "   metacritic: #{app_data['metacritic']}" }
-      sql << ", metacritic_site = '#{@db.escape(app_data['metacritic']['url'])}' "
-    end
-    if (app_data['release_date'] && app_data['release_date']['date'] && app_data['release_date']['date'].length > 0)
-      puts app_data['release_date']
-      release_date = nil
-      begin
-        release_date = DateTime.strptime(app_data['release_date']['date'], "%b %e, %Y")
-      rescue ArgumentError
-        release_date = DateTime.strptime(app_data['release_date']['date'], "%b %Y")
-      end
-      sql << ", release_date = '#{release_date.strftime('%Y-%m-%d')}' "
+      sql << ", metacritic = '#{@db.escape(app_data['metacritic']['url'])}' "
     end
     sql << ", updated_datetime = CURRENT_TIMESTAMP "
-    sql << ", parent_appid = #{app_data['steam_appid']} " unless appid == app_data['steam_appid']
     sql << " WHERE appid = #{appid} "
     @log.debug { "Query: #{sql}" }
     @db.query(sql)
