@@ -13,7 +13,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.lightcouch.CouchDbClient;
 
 /**
  * This class is responsible for pulling down the
@@ -66,7 +65,6 @@ public class AppList {
     }
     
 	public static void main(String[] args) throws Exception { 
-		CouchDbClient dbClient = new CouchDbClient();
 		appsToTSV("apps.tsv");
 	}
 

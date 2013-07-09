@@ -1,13 +1,18 @@
 package com.wesleykerr.steam.etl;
 
+import java.net.URI;
 import java.sql.PreparedStatement;
+import java.util.Arrays;
+import java.util.List;
 
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.View;
-import org.lightcouch.ViewResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.View;
+import com.couchbase.client.protocol.views.ViewResponse;
+import com.couchbase.client.protocol.views.ViewRow;
 import com.wesleykerr.steam.gson.GameplayStats;
 import com.wesleykerr.steam.persistence.mysql.MySQL;
 
@@ -21,16 +26,21 @@ public class PushPlaytime {
 	public void run() throws Exception { 
 		try { 
 			connect();
-			CouchDbClient dbClient = new CouchDbClient();
-			View v = dbClient.view("steam-games/playtime")
-					.group(true)
-					.reduce(true)
-					.includeDocs(false);
-
-			ViewResult<Long,GameplayStats, ?> entries = v.queryView(Long.class, GameplayStats.class, null);
-			for (ViewResult<Long,GameplayStats,?>.Rows r : entries.getRows()) { 
-				updateOrAdd(r.getKey(), r.getValue());
+			
+			List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
+			CouchbaseClient client = new CouchbaseClient(hosts, "default", "");
+			View v = client.getView("steam_views", "playtime");
+			
+			Query q = new Query().setGroup(true).setReduce(true).setIncludeDocs(false);
+			
+			ViewResponse response = client.query(v, q);
+			for (ViewRow row : response) { 
+			
 			}
+//			ViewResult<Long,GameplayStats, ?> entries = v.queryView(Long.class, GameplayStats.class, null);
+//			for (ViewResult<Long,GameplayStats,?>.Rows r : entries.getRows()) { 
+//				updateOrAdd(r.getKey(), r.getValue());
+//			}
 		} finally { 
 			close();
 		}

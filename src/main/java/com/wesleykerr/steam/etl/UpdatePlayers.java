@@ -2,18 +2,23 @@ package com.wesleykerr.steam.etl;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.net.URI;
 import java.sql.Connection;
+import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.View;
+import com.couchbase.client.protocol.views.ViewResponse;
+import com.couchbase.client.protocol.views.ViewRow;
 import com.google.gson.Gson;
 import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.Utils;
@@ -50,22 +55,32 @@ public class UpdatePlayers {
 		Gson gson = new Gson();
 		BufferedWriter out = new BufferedWriter(new FileWriter("/Users/wkerr/data/steam/player-updates", true));
 
-		CouchDbClient dbClient = new CouchDbClient();
-		View v = dbClient.view(view).limit(batchSize).includeDocs(true);
-		List<Player> players = v.query(Player.class);
-		for (Player p : players) { 
+		List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
+		CouchbaseClient client = new CouchbaseClient(hosts, "default", "");
+		View v = client.getView("players", view);
+		
+		Query q = new Query();
+		q.setIncludeDocs(true);
+		q.setLimit(batchSize);
+		
+		ViewResponse response = client.query(v, q);
+		for (ViewRow row : response) { 
+			Player p = gson.fromJson((String) row.getDocument(), Player.class);
 			LOGGER.debug(p.get_id());
 			List<GameStats> list = info.gatherOwnedGames(Long.parseLong(p.get_id()), genreMap);
 			if (list.size() == 0) 
 				p.setVisible(false);
 			p.setGames(list);
 			p.setUpdateDateTime(millis);
-			dbClient.update(p);
-			out.write(gson.toJson(p));
+
+			String updatedDocument = gson.toJson(p);
+			client.set(p.get_id(), updatedDocument).get();
+			out.write(updatedDocument);
 			out.write("\n");
 			Thread.currentThread().sleep(1500);
 		}
 		out.close();
+		client.shutdown();
 	}
 	
 	public static void main(String[] args) throws Exception { 
@@ -80,7 +95,7 @@ public class UpdatePlayers {
 		Random r = new Random();
 		for (int i = 0; i < 10; ++i) { 
 			UpdatePlayers up = new UpdatePlayers();
-			up.runBatch("steam-games/" + view, 100);
+			up.runBatch(view, 100);
 			
 			Thread.currentThread().sleep(5000);
 			LOGGER.debug("finished batch " + i);
