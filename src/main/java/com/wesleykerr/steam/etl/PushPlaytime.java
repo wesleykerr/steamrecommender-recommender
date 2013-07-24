@@ -13,6 +13,7 @@ import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
+import com.google.gson.Gson;
 import com.wesleykerr.steam.gson.GameplayStats;
 import com.wesleykerr.steam.persistence.mysql.MySQL;
 
@@ -20,60 +21,65 @@ public class PushPlaytime {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PushPlaytime.class);
 
 	private MySQL sql;
-	private PreparedStatement psInsert;
 	private PreparedStatement psUpdate;
+	
+	private CouchbaseClient client;
 	
 	public void run() throws Exception { 
 		try { 
 			connect();
-			
-			List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
-			CouchbaseClient client = new CouchbaseClient(hosts, "default", "");
+			Gson gson = new Gson();
+
 			View v = client.getView("steam_views", "playtime");
-			
-			Query q = new Query().setGroup(true).setReduce(true).setIncludeDocs(false);
-			
+			Query q = new Query().setGroup(true).setGroupLevel(1).setReduce(true).setIncludeDocs(false);
 			ViewResponse response = client.query(v, q);
 			for (ViewRow row : response) { 
-			
+				GameplayStats stats = gson.fromJson(row.getValue(), GameplayStats.class);
+				updateOrAdd(Long.parseLong(row.getKey()), stats);
 			}
-//			ViewResult<Long,GameplayStats, ?> entries = v.queryView(Long.class, GameplayStats.class, null);
-//			for (ViewResult<Long,GameplayStats,?>.Rows r : entries.getRows()) { 
-//				updateOrAdd(r.getKey(), r.getValue());
-//			}
 		} finally { 
 			close();
 		}
 	}
 	
 	private void updateOrAdd(Long appid, GameplayStats stats) throws Exception {
-		LOGGER.debug("updating: " + appid);
-		psUpdate.setLong(1, stats.getTotal());
-		psUpdate.setLong(2, stats.getRecent());
-		psUpdate.setLong(3, appid);
+		LOGGER.info("updating: " + appid);
+		long totalHours = stats.getTotal() / 60;
+		long totalDivisor = stats.getOwned()-stats.getNotPlayed();
+	    double totalMean = totalDivisor == 0 ? 0 : totalHours / ((double) totalDivisor);
+
+	    long recentHours = stats.getRecent() / 60;
+	    double recentMean = stats.getPlayedRecently() == 0 ? 0 : recentHours / ((double) stats.getPlayedRecently());
+		
+		psUpdate.setLong(1, stats.getOwned());
+		psUpdate.setLong(2, stats.getNotPlayed());
+		psUpdate.setLong(3, totalHours);
+		psUpdate.setDouble(4, totalMean);
+		psUpdate.setLong(5, stats.getPlayedRecently());
+		psUpdate.setLong(6, recentHours);
+		psUpdate.setDouble(7, recentMean);
+		psUpdate.setLong(8, appid);
 		int affected = psUpdate.executeUpdate();
 		LOGGER.debug("..." + affected);
 		if (affected == 0) { 
-			LOGGER.debug("inserting: " + appid);
-			psInsert.setLong(1, appid);
-			psInsert.setLong(2, stats.getTotal());
-			psInsert.setLong(3, stats.getRecent());
-			psInsert.executeUpdate();
+			LOGGER.error("missing: " + appid);
 		}
 	}
 	
 	public void connect() throws Exception { 
 		sql = MySQL.getDreamhost();
-		
-		psInsert = sql.getConnection().prepareStatement(INSERT);
 		psUpdate = sql.getConnection().prepareStatement(UPDATE);
+
+		List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
+		client = new CouchbaseClient(hosts, "default", "");
 	}
 	
 	public void close() throws Exception {
-		psInsert.close();
 		psUpdate.close();
-		
 		sql.disconnect();
+		
+		if (client != null)
+			client.shutdown();
 	}
 	
 	public static void main(String[] args) throws Exception { 
@@ -81,8 +87,8 @@ public class PushPlaytime {
 		pp.run();
 	}
 	
-	private static final String INSERT = 
-			"insert into game_recommender.games (appid, total_playtime, recent_playtime) values (?, ?, ?)";
 	private static final String UPDATE = 
-			"update game_recommender.games set total_playtime = ?, recent_playtime = ? where appid = ?";
+			"update game_recommender.games set owned = ?, not_played = ?, " +
+			"total_playtime = ?, total_mean = ?, recent_played = ?, " +
+			"recent_playtime = ?, recent_mean = ? where appid = ?";
 }

@@ -26,8 +26,8 @@ public class Utils {
 		Statement s = conn.createStatement();
 		ResultSet rs = s.executeQuery(genre_query);
 		while (rs.next()) { 
-			long app = rs.getLong("appid");
-			String genre = rs.getString("genre_name");
+			long app = rs.getLong("game_appid");
+			String genre = rs.getString("name");
 			List<String> genres = genreMap.get(app);
 			if (genres == null) { 
 				genres = new ArrayList<String>();
@@ -53,8 +53,8 @@ public class Utils {
 	}
 	
 	public static final String genre_query = 
-			"SELECT appid, genre_name " +
-			"FROM game_recommender.genres g " +
-			"JOIN game_recommender.genre_lookup gl " +
-			"ON (g.genre_id = gl.genre_id)";
+			"SELECT game_appid, name " +
+			"FROM game_recommender.genre_mappings m " +
+			"JOIN game_recommender.genres g " +
+			"ON (g.id= m.genre_id)";
 }

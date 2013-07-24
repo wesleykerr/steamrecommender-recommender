@@ -37,11 +37,15 @@ public class UpdatePlayers {
 	private QueryDocument queryDoc;
 	private SteamAPI info;
 	
+	private CouchbaseClient client;
+	
 	public UpdatePlayers() throws Exception { 
 		GregorianCalendar today = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 		millis = today.getTime().getTime();
 		
-		MySQL mySQL = MySQL.getLocalhost();
+		// TODO: fix this so that we are getting genres from a single
+		// source instead of potentially two conflicting sources.
+		MySQL mySQL = MySQL.getDreamhost();
 		Connection conn = mySQL.getConnection();
 		genreMap = Utils.loadGenres(conn);
 		mySQL.disconnect();
@@ -49,16 +53,17 @@ public class UpdatePlayers {
 		CounterDAO counter = new CounterDAOImpl();
 		queryDoc = new QueryDocument(counter);
 		info = new SteamAPI(queryDoc);
+
+		List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
+		client = new CouchbaseClient(hosts, "default", "");
 	}
 	
 	public void runBatch(String view, int batchSize) throws Exception { 
 		Gson gson = new Gson();
 		BufferedWriter out = new BufferedWriter(new FileWriter("/Users/wkerr/data/steam/player-updates", true));
 
-		List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
-		CouchbaseClient client = new CouchbaseClient(hosts, "default", "");
 		View v = client.getView("players", view);
-		
+		LOGGER.info("view: " + view);
 		Query q = new Query();
 		q.setIncludeDocs(true);
 		q.setLimit(batchSize);
@@ -66,7 +71,7 @@ public class UpdatePlayers {
 		ViewResponse response = client.query(v, q);
 		for (ViewRow row : response) { 
 			Player p = gson.fromJson((String) row.getDocument(), Player.class);
-			LOGGER.debug(p.get_id());
+			LOGGER.info("query plalyer " + p.get_id());
 			List<GameStats> list = info.gatherOwnedGames(Long.parseLong(p.get_id()), genreMap);
 			if (list.size() == 0) 
 				p.setVisible(false);
@@ -80,11 +85,14 @@ public class UpdatePlayers {
 			Thread.currentThread().sleep(1500);
 		}
 		out.close();
+	}
+	
+	public void finish() { 
 		client.shutdown();
 	}
 	
 	public static void main(String[] args) throws Exception { 
-		// "week_old" -- "new_players"
+		// "week_old_players" -- "new_players"
 		if (args.length != 1) {
 			System.out.println("Usage: UpdatePlayers <view-name>");
 			System.exit(0);
@@ -92,15 +100,22 @@ public class UpdatePlayers {
 		String view = args[0];
 		System.setProperty("steam.key", "72A809B286ED454CC53C4D03EF798EE4");
 
-		Random r = new Random();
-		for (int i = 0; i < 10; ++i) { 
-			UpdatePlayers up = new UpdatePlayers();
-			up.runBatch(view, 100);
-			
-			Thread.currentThread().sleep(5000);
-			LOGGER.debug("finished batch " + i);
-			if (i % 10 == 0)
-				Thread.currentThread().sleep(1000*r.nextInt(30));
+		UpdatePlayers up = null;
+		try { 
+			Random r = new Random();
+			up = new UpdatePlayers();
+			for (int i = 0; i < 10; ++i) { 
+				up.runBatch(view, 100);
+				
+				Thread.currentThread().sleep(5000);
+				LOGGER.debug("finished batch " + i);
+				if (i % 10 == 0)
+					Thread.currentThread().sleep(1000*r.nextInt(30));
+			}
+		} finally { 
+			if (up != null)
+				up.finish();
 		}
+		
 	}
 }
