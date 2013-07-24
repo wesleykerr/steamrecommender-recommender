@@ -110,7 +110,7 @@ class GameLinker
   def update_game(appid, app_data)
     @log.debug { "Updating: #{app_data['name']}" }
     sql = "update game_recommender.games set"
-    sql << "  name = '#{@db.escape(app_data['name'])}' "
+    sql << "  title = '#{@db.escape(app_data['name'])}' "
     sql << ", app_type = '#{@db.escape(app_data['type'])}' "
     if app_data['metacritic'] && app_data['metacritic']['url'] && app_data['metacritic']['url'].length > 0
       @log.debug { "   metacritic: #{app_data['metacritic']}" }
@@ -126,10 +126,10 @@ class GameLinker
   # @param app_data [Hash] the values to update in the database
   def update_app(appid, name, app_type)
     @log.debug { "Updating: #{name}" }
-    sql = "INSERT INTO game_recommender.games (appid, name, app_type, updated_datetime) "
+    sql = "INSERT INTO game_recommender.games (appid, title, app_type, updated_datetime) "
     sql << " values (#{appid}, '#{@db.escape(name)}', '#{@db.escape(app_type)}', CURRENT_TIMESTAMP) "
     sql << " ON DUPLICATE KEY UPDATE " 
-    sql << "   name = '#{@db.escape(name)}' "
+    sql << "   title = '#{@db.escape(name)}' "
     sql << " , app_type = '#{@db.escape(app_type)}' "
     sql << " , updated_datetime = CURRENT_TIMESTAMP "
     @log.debug { "Query: #{sql}" }
