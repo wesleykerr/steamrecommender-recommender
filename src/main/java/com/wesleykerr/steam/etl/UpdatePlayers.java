@@ -1,13 +1,17 @@
 package com.wesleykerr.steam.etl;
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.net.URI;
 import java.sql.Connection;
 import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.TimeZone;
 
@@ -98,7 +102,22 @@ public class UpdatePlayers {
 			System.exit(0);
 		}
 		String view = args[0];
-		System.setProperty("steam.key", "72A809B286ED454CC53C4D03EF798EE4");
+		
+		// check to see if we are already running...
+		File lockFile = new File("/tmp/UpdatePlayers." + view + ".lock");
+		if (lockFile.exists()) { 
+			LOGGER.info("Process already running [" + lockFile.toString() + "]");
+			throw new RuntimeException("Process already running!");
+		}
+		lockFile.createNewFile();
+		lockFile.deleteOnExit();
+
+		Properties prop = new Properties();
+		// TODO make this a parameter that is passed in.
+		InputStream input = new FileInputStream("config/recommender.properties");
+		LOGGER.info("Input: " + input);
+		prop.load(input);
+		System.setProperty("steam.key", prop.getProperty("steamKey"));
 
 		UpdatePlayers up = null;
 		try { 
@@ -116,6 +135,5 @@ public class UpdatePlayers {
 			if (up != null)
 				up.finish();
 		}
-		
 	}
 }
