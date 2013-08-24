@@ -1,0 +1,13 @@
+
+
+option java_package = "com.wesleykerr.generated";
+option java_outer_classname = "MatrixProtos";
+
+message Matrix { 
+  required int32 rowCount = 1;
+  required int32 colCount = 2;
+  repeated double data = 3 [packed = true];
+
+  repeated int64 rowNames = 4;
+  repeated int64 colNames = 5;
+}

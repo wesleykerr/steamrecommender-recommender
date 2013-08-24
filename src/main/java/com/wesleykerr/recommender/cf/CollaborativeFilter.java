@@ -175,7 +175,7 @@ public class CollaborativeFilter {
 
     	BufferedReader in = null;
     	try { 
-    		String file = "/Users/wkerr/data/steam/player-stats/part-r-00000.gz";
+    		String file = "/data/steam/training-data.gz";
     		InputStream fileStream = new FileInputStream(file);
     		InputStream gzipStream = new GZIPInputStream(fileStream);
     		Reader decode = new InputStreamReader(gzipStream, "UTF-8");
@@ -201,7 +201,7 @@ public class CollaborativeFilter {
         	in.close();
         	cf.computeCosine();
         	cf.rowNormalize();
-        	cf.output("/Users/wkerr/data/steam/item_item.csv");
+        	cf.output("/data/steam/item_item.csv");
         	LOGGER.info("total number of items " + cf.allItems.size());
     	} finally { 
     		if (in != null)
