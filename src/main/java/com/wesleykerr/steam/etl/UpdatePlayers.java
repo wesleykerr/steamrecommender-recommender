@@ -64,7 +64,7 @@ public class UpdatePlayers {
 	
 	public void runBatch(String view, int batchSize) throws Exception { 
 		Gson gson = new Gson();
-		BufferedWriter out = new BufferedWriter(new FileWriter("/Users/wkerr/data/steam/player-updates", true));
+		BufferedWriter out = new BufferedWriter(new FileWriter("/data/steam/player-updates", true));
 
 		View v = client.getView("players", view);
 		LOGGER.info("view: " + view);
