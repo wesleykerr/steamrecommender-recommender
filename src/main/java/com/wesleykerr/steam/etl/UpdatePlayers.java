@@ -104,7 +104,7 @@ public class UpdatePlayers {
 		String view = args[0];
 		
 		// check to see if we are already running...
-		File lockFile = new File("/tmp/UpdatePlayers." + view + ".lock");
+		File lockFile = new File("/tmp/UpdatePlayers.lock");
 		if (lockFile.exists()) { 
 			LOGGER.info("Process already running [" + lockFile.toString() + "]");
 			throw new RuntimeException("Process already running!");
