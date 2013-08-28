@@ -39,6 +39,8 @@ public class RecentData extends Configured implements Tool {
 					context.write(new Text(p.get_id()), value);
 			} catch (JsonSyntaxException e) { 
 				LOGGER.error("malformed json: " + value.toString());
+			} catch (NumberFormatException nfe) {
+				LOGGER.error("malformed json: " + value.toString());
 			}
 		}
 	}
