@@ -32,6 +32,7 @@ import com.wesleykerr.steam.persistence.mysql.MySQL;
  */
 public class QueryDocument {
 	private static final Logger LOGGER = LoggerFactory.getLogger(QueryDocument.class);
+	private static final int TIMEOUT = 120;
 
 	private CounterDAO counter;
 	
@@ -40,6 +41,10 @@ public class QueryDocument {
 	public QueryDocument(CounterDAO counter) {
 		this.counter = counter;
 		this.httpClient = new DefaultHttpClient();
+		this.httpClient.getParams().setParameter("http.socket.timeout", TIMEOUT*1000);
+		this.httpClient.getParams().setParameter("http.connection.timeout", TIMEOUT*1000);
+		this.httpClient.getParams().setParameter("http.connection-manager.timeout", new Long(TIMEOUT*1000));
+		this.httpClient.getParams().setParameter("http.protocol.head-body-timeout", TIMEOUT*1000);
 	}
 	
 	/**
