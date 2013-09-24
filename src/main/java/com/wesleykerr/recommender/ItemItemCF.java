@@ -147,7 +147,8 @@ public abstract class ItemItemCF {
     	} finally { 
     		if (in != null)
     			in.close();
-    	}    }
+    	}    
+    }
     
     static interface RewardEmitter { 
     	public void observe(ItemItemCF cf, Player p);

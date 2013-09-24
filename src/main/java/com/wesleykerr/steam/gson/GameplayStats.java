@@ -1,34 +1,38 @@
 package com.wesleykerr.steam.gson;
 
+
 public class GameplayStats {
-	private long total;
-	private long recent;
+	private double total;
+	private double recent;
 	private long owned;
 	private long notPlayed;
 	private long playedRecently;
 
+	private double totalSquared;
+	private double recentSquared;
+
 	/**
 	 * @return the total
 	 */
-	public long getTotal() {
+	public double getTotal() {
 		return total;
 	}
 	/**
 	 * @param total the total to set
 	 */
-	public void setTotal(long total) {
+	public void setTotal(double total) {
 		this.total = total;
 	}
 	/**
 	 * @return the recent
 	 */
-	public long getRecent() {
+	public double getRecent() {
 		return recent;
 	}
 	/**
 	 * @param recent the recent to set
 	 */
-	public void setRecent(long recent) {
+	public void setRecent(double recent) {
 		this.recent = recent;
 	}
 	/**
@@ -66,6 +70,30 @@ public class GameplayStats {
 	 */
 	public void setPlayedRecently(long playedRecently) {
 		this.playedRecently = playedRecently;
+	}
+	/**
+	 * @return the totalSquared
+	 */
+	public double getTotalSquared() {
+		return totalSquared;
+	}
+	/**
+	 * @param totalSquared the totalSquared to set
+	 */
+	public void setTotalSquared(double totalSquared) {
+		this.totalSquared = totalSquared;
+	}
+	/**
+	 * @return the recentSquared
+	 */
+	public double getRecentSquared() {
+		return recentSquared;
+	}
+	/**
+	 * @param recentSquared the recentSquared to set
+	 */
+	public void setRecentSquared(double recentSquared) {
+		this.recentSquared = recentSquared;
 	}
 	
 }
