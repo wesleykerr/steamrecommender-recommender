@@ -1,18 +1,21 @@
 package com.wesleykerr.steam.scraping;
 
+import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.couchbase.client.CouchbaseClient;
+import com.google.gson.JsonObject;
 import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.Utils;
 import com.wesleykerr.steam.persistence.CounterDAO;
-import com.wesleykerr.steam.persistence.PlayerDAO;
-import com.wesleykerr.steam.persistence.mysql.CounterDAOImpl;
-import com.wesleykerr.steam.persistence.mysql.MySQL;
-import com.wesleykerr.steam.persistence.mysql.PlayerDAOImpl;
+import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
 
 public class SearchCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchCollector.class);
@@ -20,27 +23,51 @@ public class SearchCollector {
 
     private String keywords;
 
-    private PlayerDAO playerDAO;
     private QueryDocument queryDocument;
+    private CouchbaseClient client;
 
-    public SearchCollector(String keywords) { 
+    private int queryCount;
+
+    public SearchCollector(String keywords) throws Exception { 
         this.keywords = keywords;
+
+        CounterDAO counter = new CounterDAOImpl();
+        queryDocument = new QueryDocument(counter);
+
+//        List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
+        List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
+        client = new CouchbaseClient(hosts, "default", "");
+
+        queryCount = 0;
     }
 
-    public void setPlayerDAO(PlayerDAO playerDAO) { 
-        this.playerDAO = playerDAO;
-    }
-
-    public void setQueryDocument(QueryDocument queryDocument) { 
-        this.queryDocument = queryDocument;
-    }
-
-    private long gatherSteamId(String playerURL) { 
+        private String gatherSteamId(String playerURL) { 
+        try {
+            Thread.currentThread().sleep(1500);
+        } catch (Exception e) { 
+            e.printStackTrace();
+        }
+        
         String url = playerURL + "/?xml=1";
         Document doc = queryDocument.request(url, 10);
         Element idElement = doc.select("steamid64").first();                    
-        return Long.parseLong(idElement.text());
+        
+        ++queryCount;
+        return idElement.text();
     }
+    
+    private void add(String steamStr) { 
+        long steamId = Long.parseLong(steamStr);
+        Object o = client.get(String.valueOf(steamId));
+        if (o == null) {
+            LOGGER.info("SteamId: " + steamId + " does not exist");
+            JsonObject obj = new JsonObject();
+            obj.addProperty("_id", String.valueOf(steamId));
+            obj.addProperty("updateDateTime", 0);
+            client.add(String.valueOf(steamId), obj.toString());
+        }
+    }
+
 
     /**
      * Iterate over the players and make sure to extract their
@@ -50,6 +77,9 @@ public class SearchCollector {
     private void addPlayers(Elements players) {
         for (Element e : players) { 
             String playerURL = e.attr("href");
+            if (playerURL.startsWith("steam:"))
+                continue;
+
             int index = playerURL.lastIndexOf('/');
             if (index == -1) { 
                 LOGGER.error("Error: " + playerURL);
@@ -57,20 +87,15 @@ public class SearchCollector {
             }
 
             if (playerURL.contains("profiles")) { 
-                long value = Long.parseLong(playerURL.substring(index+1));
-                playerDAO.add(value, "SearchCollector: " + keywords);
-
+                add(playerURL.substring(index+1));
             } else if (playerURL.contains("id")) { 
-                long value = gatherSteamId(playerURL);
-                playerDAO.add(value, "SearchCollector: " + keywords);
-
+                add(gatherSteamId(playerURL));
             } else {
                 LOGGER.error("Error: " + playerURL);
             }
         }
     }
-
-
+    
     public void search() { 
         String url = baseURL_ + "/actions/Search?T=Account&K=\"" + keywords + "\"";
         LOGGER.debug("URL: " + url);
@@ -98,23 +123,7 @@ public class SearchCollector {
     }
 
     public static void main(String[] args) throws Exception { 
-        MySQL mySQL = new MySQL();
-        mySQL.setHost("localhost");
-        mySQL.setPort(3306);
-        mySQL.setDb("game_recommender");
-        mySQL.setUsername("root");
-        mySQL.connect();
-
-        PlayerDAO playerDAO = new PlayerDAOImpl(mySQL.getConnection());
-        CounterDAO counterDAO = new CounterDAOImpl(mySQL.getConnection());
-
-        QueryDocument queryDocument = new QueryDocument(counterDAO);
-
         SearchCollector si = new SearchCollector("dota");
-        si.setPlayerDAO(playerDAO);
-        si.setQueryDocument(queryDocument);
         si.search();
-
-        mySQL.disconnect();
     }
 }
