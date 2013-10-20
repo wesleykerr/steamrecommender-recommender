@@ -20,7 +20,7 @@ import com.couchbase.client.protocol.views.ViewRow;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.wesleykerr.steam.gson.GameplayStats;
-import com.wesleykerr.steam.persistence.mysql.MySQL;
+import com.wesleykerr.steam.persistence.MySQL;
 
 public class PushPlaytime {
 	private static final Logger LOGGER = LoggerFactory.getLogger(PushPlaytime.class);
