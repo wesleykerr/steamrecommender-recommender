@@ -3,9 +3,12 @@ package com.wesleykerr.steam.scraping;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -15,65 +18,44 @@ import org.slf4j.LoggerFactory;
 
 import com.couchbase.client.CouchbaseClient;
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.common.collect.Sets;
 import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.Utils;
-import com.wesleykerr.steam.gson.Player;
-import com.wesleykerr.steam.persistence.CounterDAO;
+import com.wesleykerr.steam.persistence.MySQL;
+import com.wesleykerr.steam.persistence.dao.CounterDAO;
+import com.wesleykerr.steam.persistence.dao.PlayerURLsDAO;
+import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
+import com.wesleykerr.steam.persistence.jdbc.PlayerURLsDAOImpl;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
+import com.wesleykerr.steam.persistence.nosql.SteamPlayerDAOImpl;
 
 public class GroupCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GroupCollector.class);
     private static final String baseURL_ = "http://steamcommunity.com/";
 
-    private String prefix;
-    private String game;
+    private static final int MAX_CALLS = 1000;
+    private static final int NUM_PAGES = 100;
 
     private QueryDocument queryDocument;
-    private CouchbaseClient client;
+
+    private PlayerURLsDAO playerDAO;
+    private SteamPlayerDAO steamPlayerDAO;
+
+    private CounterDAO counterDAO;
+    private CounterDAO playerCounterDAO;
+
+    public GroupCollector(PlayerURLsDAO playerDAO, SteamPlayerDAO steamPlayerDAO) { 
+        this.playerDAO = playerDAO;
+        this.steamPlayerDAO = steamPlayerDAO;
+
+        playerCounterDAO = new CounterDAOImpl();
+        
+        counterDAO = new CounterDAOImpl();
+        queryDocument = new QueryDocument(counterDAO);
+    }
     
-    private int queryCount;
-
-    public GroupCollector(String prefix, String game) throws Exception { 
-        this.prefix = prefix;
-        this.game = game;
-
-        CounterDAO counter = new CounterDAOImpl();
-        queryDocument = new QueryDocument(counter);
-
-//        List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
-        List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
-        client = new CouchbaseClient(hosts, "default", "");
-        
-        queryCount = 0;
-    }
-
-    private String gatherSteamId(String playerURL) { 
-        try {
-            Thread.currentThread().sleep(1500);
-        } catch (Exception e) { 
-            e.printStackTrace();
-        }
-        
-        String url = playerURL + "/?xml=1";
-        Document doc = queryDocument.request(url, 10);
-        Element idElement = doc.select("steamid64").first();                    
-        
-        ++queryCount;
-        return idElement.text();
-    }
-
-    private void add(String steamStr) { 
-        long steamId = Long.parseLong(steamStr);
-        Object o = client.get(String.valueOf(steamId));
-        if (o == null) {
-            LOGGER.info("SteamId: " + steamId + " does not exist");
-            JsonObject obj = new JsonObject();
-            obj.addProperty("_id", String.valueOf(steamId));
-            obj.addProperty("updateDateTime", 0);
-            client.add(String.valueOf(steamId), obj.toString());
-        }
+    public int getNumberPlayersAdded() { 
+        return playerCounterDAO.getCounter();
     }
 
     /**
@@ -82,6 +64,8 @@ public class GroupCollector {
      * @param players
      */
     private void addPlayers(Elements players) {
+        Set<String> storedURLs = Sets.newHashSet();
+        
         for (Element e : players) { 
             String playerURL = e.attr("href");
             if (playerURL.startsWith("steam:"))
@@ -94,9 +78,16 @@ public class GroupCollector {
             }
 
             if (playerURL.contains("profiles")) { 
-                add(playerURL.substring(index+1));
+                long steamId = Long.parseLong(playerURL.substring(index+1));
+                boolean added = steamPlayerDAO.add(steamId);
+                if (added)
+                    playerCounterDAO.incrCounter();
             } else if (playerURL.contains("id")) { 
-                add(gatherSteamId(playerURL));
+                if (!storedURLs.contains(playerURL)) {
+                    LOGGER.debug("Storing [" + playerURL + "]");
+                    playerDAO.add(playerURL);
+                    storedURLs.add(playerURL);
+                }
             } else {
                 LOGGER.error("Error: " + playerURL);
             }
@@ -107,12 +98,102 @@ public class GroupCollector {
      * Grab the website and figure out what we are going to do with it.
      * @param query
      */
-    public void scrape(String query) { 
+    public void scrape(String prefix, String game, String query) { 
         String url = baseURL_ + prefix + "/" + game + "/members/";
         LOGGER.debug("URL: " + url);
         Document doc = queryDocument.request(url, 10);
-        ++queryCount;
 
+        int maxPage = getMaxPage(doc);
+        LOGGER.info("Maximum Number of Pages: " + maxPage);
+
+        processDocument(doc, query);
+        if (maxPage < NUM_PAGES) { 
+            processAllPages(url, query, maxPage);
+        } else {
+            processRandomPages(url, query, maxPage);
+        }
+    }
+    
+    /**
+     * With any remaining calls that we have, we can begin to scrape
+     * details about players that are not using their steamids as 
+     * their membership id.
+     */
+    public void processPlayerURLs() { 
+        playerCounterDAO.reset();
+        int remaining = MAX_CALLS - counterDAO.getCounter();
+        if (remaining <= 0)
+            return;
+        
+        LOGGER.info("Pulling details for " + remaining + " players");
+        scrapeSteamIds(remaining);
+    }
+    
+    /**
+     * Begin processing player urls up to the maximum
+     * count.
+     * @param count
+     */
+    public void scrapeSteamIds(int count) { 
+        List<String> urls = playerDAO.fetch(count);
+        for (String playerURL : urls) { 
+            String url = playerURL + "/?xml=1";
+            
+            Document doc = queryDocument.request(url, 10);
+            Element idElement = doc.select("steamid64").first();                    
+
+            long steamId = Long.parseLong(idElement.text());
+            boolean added = steamPlayerDAO.add(steamId);
+            if (added)
+                playerCounterDAO.incrCounter();
+
+            playerDAO.delete(playerURL);
+            Utils.delay(1500);
+        }
+    }
+    
+    protected void processAllPages(String url, String query, int maxPage) { 
+        for (int i = 2; i <= maxPage; ++i) { 
+            LOGGER.info(" ***** PAGE " + i);
+            LOGGER.debug(url + "?p=" + i);
+            Document page = queryDocument.request(url + "?p=" + i, 10);
+            processDocument(page, query);
+            Utils.delay(3000);
+        }
+    }
+    
+    protected void processRandomPages(String url, String query, int maxPage) { 
+        Random r = new Random();
+        Set<Integer> all = Sets.newTreeSet();
+        for (int i = 2; i <= maxPage; ++i)
+            all.add(i);
+        List<Integer> list = new ArrayList<Integer>(all);
+        Collections.shuffle(list, r);
+        
+        for (int i = 0; i < NUM_PAGES && i < all.size(); ++i) { 
+            int page = list.get(i);
+            LOGGER.info(" ***** PAGE " + page);
+            LOGGER.debug(url + "?p=" + page);
+            Document pageDoc = queryDocument.request(url + "?p=" + page, 10);
+            processDocument(pageDoc, query);
+            Utils.delay(3000);
+        }
+    }
+
+    protected void processDocument(Document doc, String query) { 
+        Element memberList = doc.select("div#memberList").first();
+        Elements players = memberList.select(query);
+        addPlayers(players);
+    }
+    
+    /**
+     * Iterate through all of the page links to find the max value.
+     * Some of the page links will not be numbers so that's why we ignore
+     * any number format exceptions we receive.
+     * @param doc
+     * @return
+     */
+    protected int getMaxPage(Document doc) { 
         int maxPage = -1;
         Elements pageLinks = doc.select("div.pageLinks > a");
         for (Element e : pageLinks) { 
@@ -124,27 +205,9 @@ public class GroupCollector {
                 // ignore.
             }
         }
-        LOGGER.info("Maximum Number of Pages: " + maxPage);
-        for (int i = 1; i <= maxPage && i <= 50 && queryCount < 500; ++i) { 
-            LOGGER.info(" ***** PAGE " + i);
-            LOGGER.debug(url + "?p=" + i);
-            Document page = queryDocument.request(url + "?p=" + i, 10);
-            ++queryCount;
+        return maxPage;
+    }
 
-            Element memberList = page.select("div#memberList").first();
-            Elements players = memberList.select(query);
-            LOGGER.debug(players.toString());
-            addPlayers(players);
-            Utils.delay(10000);
-        }
-    }
-    
-    private void test(String steamId) throws Exception { 
-        Gson gson = new Gson();
-        Object o = client.get(String.valueOf(steamId));
-        Player p = gson.fromJson((String) o, Player.class);
-        LOGGER.info("query player " + p.get_id());
-    }
 
     /**
      * Select a game from our list that we will be pulling
@@ -167,16 +230,26 @@ public class GroupCollector {
     }
 
     public static void main(String[] args) throws Exception { 
-        // Read from a file one of a list of games.  Select one at random
-        // and select n random pages to pull and dump into the Couchbase datastore.
-        String line = selectDetails("/data/starter/games");
-        LOGGER.info("Selected: " + line);
-
-        String[] tokens = line.split("\t");
-        GroupCollector gi = new GroupCollector(tokens[0], tokens[1]);
-        gi.scrape(tokens[2]);
+        List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
+        CouchbaseClient client = new CouchbaseClient(hosts, "default", "");
+        SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(client);
         
-        // did not stop...
+        MySQL mySQL = MySQL.getDreamhost();
+        PlayerURLsDAO playerDAO = new PlayerURLsDAOImpl(mySQL.getConnection());
+
+        GroupCollector collector = new GroupCollector(playerDAO, steamPlayerDAO);
+
+        String line = selectDetails("/data/starter/games");
+        String[] tokens = line.split(",");
+        LOGGER.info("Selected: " + line);
+        collector.scrape(tokens[0], tokens[1], tokens[2]);
+        LOGGER.info("Added: " + collector.getNumberPlayersAdded() + " steamids");
+
+        collector.processPlayerURLs();
+        LOGGER.info("Added: " + collector.getNumberPlayersAdded() + " steamids from player URLs");
+
+        mySQL.disconnect();
+        client.shutdown();
     }
 }
 

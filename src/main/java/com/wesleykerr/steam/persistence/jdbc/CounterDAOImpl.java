@@ -1,4 +1,4 @@
-package com.wesleykerr.steam.persistence.mysql;
+package com.wesleykerr.steam.persistence.jdbc;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,7 +9,7 @@ import java.sql.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.wesleykerr.steam.persistence.CounterDAO;
+import com.wesleykerr.steam.persistence.dao.CounterDAO;
 
 public class CounterDAOImpl implements CounterDAO {
 
@@ -102,6 +102,10 @@ public class CounterDAOImpl implements CounterDAO {
 		}
 		
 		return getCounter();
+	}
+	
+	public void reset() { 
+	    setCounter(0);
 	}
 
 	private static final String UPDATE = 

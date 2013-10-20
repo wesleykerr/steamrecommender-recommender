@@ -14,7 +14,7 @@ import com.couchbase.client.CouchbaseClient;
 import com.google.gson.JsonObject;
 import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.Utils;
-import com.wesleykerr.steam.persistence.CounterDAO;
+import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
 
 public class SearchCollector {
