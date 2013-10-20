@@ -8,9 +8,7 @@ import java.net.URISyntaxException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -19,9 +17,8 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.wesleykerr.steam.persistence.CounterDAO;
-import com.wesleykerr.steam.persistence.mysql.CounterDAOImpl;
-import com.wesleykerr.steam.persistence.mysql.MySQL;
+import com.wesleykerr.steam.persistence.dao.CounterDAO;
+import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
 
 /**
  * We are requiring that the QueryDocument
@@ -119,14 +116,7 @@ public class QueryDocument {
 	public static void main(String[] args) { 
 		System.setProperty("steam.key", "72A809B286ED454CC53C4D03EF798EE4");
 		
-		MySQL mySQL = new MySQL();
-		mySQL.setHost("localhost");
-		mySQL.setPort(3306);
-		mySQL.setDb("game_recommender");
-		mySQL.setUsername("root");
-		mySQL.connect();
-		
-		CounterDAO counterDAO = new CounterDAOImpl(mySQL.getConnection());
+		CounterDAO counterDAO = new CounterDAOImpl();
 		QueryDocument doc = new QueryDocument(counterDAO);
 		try {
 			doc.requestJSON(new URI("http://api.steampowered.com/"), 2);
