@@ -1,4 +1,4 @@
-package com.wesleykerr.steam.persistence;
+package com.wesleykerr.steam.persistence.dao;
 
 public interface CounterDAO {
 	
@@ -14,4 +14,9 @@ public interface CounterDAO {
 	 * @return
 	 */
 	int incrCounter();
+	
+	/**
+	 * Reset the counter to zero.
+	 */
+	void reset();
 }

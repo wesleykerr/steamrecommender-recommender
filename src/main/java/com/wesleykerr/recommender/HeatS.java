@@ -13,8 +13,8 @@ public class HeatS extends ItemItemCF {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HeatS.class);
 
 	private Map<Long,Double> itemTotals;
-	
-    public HeatS() {
+
+	public HeatS() {
     	super();
     	
     	itemTotals = Maps.newHashMap();
@@ -64,7 +64,9 @@ public class HeatS extends ItemItemCF {
     public static void main(String[] args) throws Exception {     	
     	HeatS.LOG_RECORDS = 20000;
     	HeatS heats = new HeatS();
-    	RewardEmitter emitter = new BinaryEmitter();
+//    	RewardEmitter emitter = new BinaryEmitter();
+        ScoreEmitter emitter = new ScoreEmitter();
+        emitter.loadGameStats("/data/steam/playtime");
 
 		String input = "/data/steam/training-data.gz";
 		String output = "/data/steam/heats.csv";

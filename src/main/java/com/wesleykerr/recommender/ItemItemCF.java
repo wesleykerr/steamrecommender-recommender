@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -166,4 +167,104 @@ public abstract class ItemItemCF {
     		cf.observe(items);
     	}
     }
+    
+    static class ScoreEmitter implements RewardEmitter { 
+        
+        private Map<Long,Stats> statsMap;
+        
+        public void loadGameStats(String file) throws Exception { 
+            statsMap = Maps.newHashMap();
+            BufferedReader in = null;
+            try { 
+                in = new BufferedReader(new FileReader(file));
+                for (String line = in.readLine(); line != null; line = in.readLine()) { 
+                    String[] tokens = line.split("\t");
+                    if ("recent".equals(tokens[1]))
+                        continue;
+                    
+                    long appId = Long.parseLong(tokens[0]);
+                    Stats s = new Stats();
+                    s.setQ25(Double.parseDouble(tokens[2]));
+                    s.setMedian(Double.parseDouble(tokens[3]));
+                    s.setQ75(Double.parseDouble(tokens[4]));
+                    statsMap.put(appId, s);
+                }
+            } finally { 
+                if (in != null)
+                    in.close();
+            }
+        }
+        
+        public void observe(ItemItemCF cf, Player p) {
+            Map<Long,Double> items = Maps.newTreeMap();
+            for (GameStats gameStats : p.getGames()) { 
+                // you haven't played the game if you played less than 20 minutes.
+                if (gameStats.getCompletePlaytime() < 20)
+                    continue;
+                
+                Stats s = statsMap.get(gameStats.getAppid());
+                if (s == null) { 
+                    LOGGER.error("Missing stats for a game played: " + gameStats.getAppid());
+                    continue;
+                }
+
+                items.put(gameStats.getAppid(), getScore(gameStats.getCompletePlaytime(), s));
+            }
+            cf.observe(items);
+        }
+        
+        public double getScore(long minutesPlayed, Stats stats) { 
+            double hoursPlayed = minutesPlayed / 60.0;
+            if (hoursPlayed < stats.getQ25())
+                return 1;
+            if (hoursPlayed < stats.getMedian())
+                return 2;
+            if (hoursPlayed < stats.getQ75())
+                return 3;
+            return 4;
+        }
+    }
+    
+    public static class Stats { 
+        private double median;
+        private double q25;
+        private double q75;
+
+        /**
+         * @return the median
+         */
+        public double getMedian() {
+            return median;
+        }
+        /**
+         * @param median the median to set
+         */
+        public void setMedian(double median) {
+            this.median = median;
+        }
+        /**
+         * @return the q25
+         */
+        public double getQ25() {
+            return q25;
+        }
+        /**
+         * @param q25 the q25 to set
+         */
+        public void setQ25(double q25) {
+            this.q25 = q25;
+        }
+        /**
+         * @return the q75
+         */
+        public double getQ75() {
+            return q75;
+        }
+        /**
+         * @param q75 the q75 to set
+         */
+        public void setQ75(double q75) {
+            this.q75 = q75;
+        }
+    }    
 }

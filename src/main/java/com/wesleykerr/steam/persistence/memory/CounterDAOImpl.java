@@ -3,7 +3,7 @@ package com.wesleykerr.steam.persistence.memory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.wesleykerr.steam.persistence.CounterDAO;
+import com.wesleykerr.steam.persistence.dao.CounterDAO;
 
 public class CounterDAOImpl implements CounterDAO {
 
@@ -39,5 +39,9 @@ public class CounterDAOImpl implements CounterDAO {
 	public int incrCounter() {
 		++count;
 		return count;
+	}
+	
+	public void reset() { 
+	    count = 0;
 	}
 }

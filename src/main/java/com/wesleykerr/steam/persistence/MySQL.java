@@ -1,4 +1,4 @@
-package com.wesleykerr.steam.persistence.mysql;
+package com.wesleykerr.steam.persistence;
 
 import java.io.FileInputStream;
 import java.io.InputStream;

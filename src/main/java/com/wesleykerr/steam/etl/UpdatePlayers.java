@@ -28,9 +28,9 @@ import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.Utils;
 import com.wesleykerr.steam.gson.GameStats;
 import com.wesleykerr.steam.gson.Player;
-import com.wesleykerr.steam.persistence.CounterDAO;
+import com.wesleykerr.steam.persistence.MySQL;
+import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
-import com.wesleykerr.steam.persistence.mysql.MySQL;
 
 public class UpdatePlayers {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdatePlayers.class);
