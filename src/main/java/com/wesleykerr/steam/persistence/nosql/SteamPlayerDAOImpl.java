@@ -21,6 +21,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
         if (o == null) {
             JsonObject obj = new JsonObject();
             obj.addProperty("_id", String.valueOf(steamId));
+            obj.addProperty("visible", true);
             obj.addProperty("updateDateTime", 0);
             client.add(String.valueOf(steamId), obj.toString());
             return true;
