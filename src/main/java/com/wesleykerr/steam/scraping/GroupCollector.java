@@ -137,18 +137,23 @@ public class GroupCollector {
     public void scrapeSteamIds(int count) { 
         List<String> urls = playerDAO.fetch(count);
         for (String playerURL : urls) { 
-            String url = playerURL + "/?xml=1";
-            
-            Document doc = queryDocument.request(url, 10);
-            Element idElement = doc.select("steamid64").first();                    
+            try { 
+                String url = playerURL + "/?xml=1";
+                
+                Document doc = queryDocument.request(url, 10);
+                Element idElement = doc.select("steamid64").first();                    
 
-            long steamId = Long.parseLong(idElement.text());
-            boolean added = steamPlayerDAO.add(steamId);
-            if (added)
-                playerCounterDAO.incrCounter();
+                long steamId = Long.parseLong(idElement.text());
+                boolean added = steamPlayerDAO.add(steamId);
+                if (added)
+                    playerCounterDAO.incrCounter();
 
-            playerDAO.delete(playerURL);
-            Utils.delay(1500);
+                playerDAO.delete(playerURL);
+                Utils.delay(1500);
+            } catch (Exception e) { 
+                LOGGER.error("Error processing " + playerURL);
+                LOGGER.error("MSG:", e);
+            }
         }
     }
     
@@ -230,26 +235,33 @@ public class GroupCollector {
     }
 
     public static void main(String[] args) throws Exception { 
-        List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
-        CouchbaseClient client = new CouchbaseClient(hosts, "default", "");
-        SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(client);
-        
-        MySQL mySQL = MySQL.getDreamhost();
-        PlayerURLsDAO playerDAO = new PlayerURLsDAOImpl(mySQL.getConnection());
+        CouchbaseClient client = null;
+        MySQL mySQL = null;
+        try { 
+            List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
+            client = new CouchbaseClient(hosts, "default", "");
+            SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(client);
+            
+            mySQL = MySQL.getDreamhost();
+            PlayerURLsDAO playerDAO = new PlayerURLsDAOImpl(mySQL.getConnection());
 
-        GroupCollector collector = new GroupCollector(playerDAO, steamPlayerDAO);
+            GroupCollector collector = new GroupCollector(playerDAO, steamPlayerDAO);
 
-        String line = selectDetails("/data/starter/games");
-        String[] tokens = line.split(",");
-        LOGGER.info("Selected: " + line);
-        collector.scrape(tokens[0], tokens[1], tokens[2]);
-        LOGGER.info("Added: " + collector.getNumberPlayersAdded() + " steamids");
+            String line = selectDetails("/data/starter/games");
+            String[] tokens = line.split(",");
+            LOGGER.info("Selected: " + line);
+            collector.scrape(tokens[0], tokens[1], tokens[2]);
+            LOGGER.info("Added: " + collector.getNumberPlayersAdded() + " steamids");
 
-        collector.processPlayerURLs();
-        LOGGER.info("Added: " + collector.getNumberPlayersAdded() + " steamids from player URLs");
+            collector.processPlayerURLs();
+            LOGGER.info("Added: " + collector.getNumberPlayersAdded() + " steamids from player URLs");
 
-        mySQL.disconnect();
-        client.shutdown();
+        } finally { 
+            if (mySQL != null)
+                mySQL.disconnect();
+            if (client != null) 
+                client.shutdown();
+        }
     }
 }
 
