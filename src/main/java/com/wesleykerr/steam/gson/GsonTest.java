@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.TimeZone;
 
 import com.google.gson.Gson;
+import com.wesleykerr.steam.domain.player.GameStats;
+import com.wesleykerr.steam.domain.player.Player;
 
 public class GsonTest {
 

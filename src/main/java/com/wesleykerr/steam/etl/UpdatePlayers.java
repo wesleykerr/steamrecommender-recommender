@@ -26,11 +26,13 @@ import com.couchbase.client.protocol.views.ViewRow;
 import com.google.gson.Gson;
 import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.Utils;
-import com.wesleykerr.steam.gson.GameStats;
-import com.wesleykerr.steam.gson.Player;
+import com.wesleykerr.steam.domain.player.GameStats;
+import com.wesleykerr.steam.domain.player.Player;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
+import com.wesleykerr.steam.persistence.dao.GenresDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
+import com.wesleykerr.steam.persistence.sql.GenresDAOImpl;
 
 public class UpdatePlayers {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdatePlayers.class);
@@ -51,7 +53,9 @@ public class UpdatePlayers {
 		// source instead of potentially two conflicting sources.
 		MySQL mySQL = MySQL.getDreamhost();
 		Connection conn = mySQL.getConnection();
-		genreMap = Utils.loadGenres(conn);
+		
+		GenresDAO genresDAO = new GenresDAOImpl(conn);
+		genreMap = genresDAO.getGenresByAppId();
 		mySQL.disconnect();
 
 		CounterDAO counter = new CounterDAOImpl();

@@ -1,4 +1,4 @@
-package com.wesleykerr.recommender;
+package com.wesleykerr.steam.mapreduce;
 
 import java.io.IOException;
 
@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.wesleykerr.steam.gson.Player;
+import com.wesleykerr.steam.domain.player.Player;
 
 public class RecentData extends Configured implements Tool {
 	private static final Gson gson = new Gson();

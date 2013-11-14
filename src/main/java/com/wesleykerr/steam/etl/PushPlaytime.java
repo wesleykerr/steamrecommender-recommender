@@ -19,7 +19,7 @@ import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
-import com.wesleykerr.steam.gson.GameplayStats;
+import com.wesleykerr.steam.domain.game.GameplayStats;
 import com.wesleykerr.steam.persistence.MySQL;
 
 public class PushPlaytime {

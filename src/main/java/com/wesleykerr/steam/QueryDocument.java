@@ -78,6 +78,7 @@ public class QueryDocument {
 		do { 
 			try { 
 	        	HttpGet httpget = new HttpGet(uri);
+	        	httpget.setHeader("User-Agent", "steamrecommender.com");
 	        	HttpResponse response = httpClient.execute(httpget);
 	        	counter.incrCounter();
 

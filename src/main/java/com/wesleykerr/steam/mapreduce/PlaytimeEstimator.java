@@ -1,4 +1,4 @@
-package com.wesleykerr.steam.etl;
+package com.wesleykerr.steam.mapreduce;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,8 +28,8 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import com.wesleykerr.steam.gson.GameStats;
-import com.wesleykerr.steam.gson.Player;
+import com.wesleykerr.steam.domain.player.GameStats;
+import com.wesleykerr.steam.domain.player.Player;
 
 /**
  * Estimates the 25% and 75% quantiles of each app so that

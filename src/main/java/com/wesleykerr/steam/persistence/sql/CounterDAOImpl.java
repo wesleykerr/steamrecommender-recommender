@@ -1,4 +1,4 @@
-package com.wesleykerr.steam.persistence.jdbc;
+package com.wesleykerr.steam.persistence.sql;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

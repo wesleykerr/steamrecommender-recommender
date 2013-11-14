@@ -1,4 +1,4 @@
-package com.wesleykerr.steam.gson;
+package com.wesleykerr.steam.domain.player;
 
 import java.util.List;
 

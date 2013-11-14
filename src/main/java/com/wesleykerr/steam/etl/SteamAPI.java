@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.wesleykerr.steam.QueryDocument;
-import com.wesleykerr.steam.gson.GameStats;
+import com.wesleykerr.steam.domain.player.GameStats;
 
 public class SteamAPI {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SteamAPI.class);
