@@ -25,14 +25,15 @@ import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
 import com.google.gson.Gson;
 import com.wesleykerr.steam.QueryDocument;
-import com.wesleykerr.steam.Utils;
 import com.wesleykerr.steam.domain.player.GameStats;
 import com.wesleykerr.steam.domain.player.Player;
+import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.dao.GenresDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
 import com.wesleykerr.steam.persistence.sql.GenresDAOImpl;
+import com.wesleykerr.utils.Utils;
 
 public class UpdatePlayers {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdatePlayers.class);
@@ -79,15 +80,18 @@ public class UpdatePlayers {
 		ViewResponse response = client.query(v, q);
 		for (ViewRow row : response) { 
 			Player p = gson.fromJson((String) row.getDocument(), Player.class);
-			LOGGER.info("query plalyer " + p.get_id());
-			List<GameStats> list = info.gatherOwnedGames(Long.parseLong(p.get_id()), genreMap);
-			if (list.size() == 0) 
-				p.setVisible(false);
-			p.setGames(list);
-			p.setUpdateDateTime(millis);
 
-			String updatedDocument = gson.toJson(p);
-			client.set(p.get_id(), updatedDocument).get();
+			List<GameStats> list = info.gatherOwnedGames(Long.parseLong(p.getId()), genreMap);
+            Builder builder = Builder.create()
+                    .withPlayer(p)
+                    .withGames(list)
+                    .isVisible(list.size() > 0)
+                    .withUpdateDateTime(millis);
+            Player updated = builder.build();
+			LOGGER.info("query plalyer " + updated.getId());
+
+			String updatedDocument = gson.toJson(updated);
+			client.set(updated.getId(), updatedDocument).get();
 			out.write(updatedDocument);
 			out.write("\n");
 			Thread.currentThread().sleep(1500);
@@ -101,7 +105,7 @@ public class UpdatePlayers {
 	
 	public static void main(String[] args) throws Exception { 
 		// "week_old_players" -- "new_players"
-		if (args.length != 1) {
+		if (args.length != 3) {
 			System.out.println("Usage: UpdatePlayers <view-name>");
 			System.exit(0);
 		}

@@ -36,7 +36,7 @@ public class RecentData extends Configured implements Tool {
 			try { 
 				Player p = gson.fromJson((String) value.toString(), Player.class);
 				if (p.isVisible() && !p.getGames().isEmpty()) 
-					context.write(new Text(p.get_id()), value);
+					context.write(new Text(p.getId()), value);
 			} catch (JsonSyntaxException e) { 
 				LOGGER.error("malformed json: " + value.toString());
 			} catch (NumberFormatException nfe) {
