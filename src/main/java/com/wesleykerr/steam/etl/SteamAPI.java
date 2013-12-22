@@ -1,18 +1,25 @@
 package com.wesleykerr.steam.etl;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.http.client.utils.URIBuilder;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.wesleykerr.steam.QueryDocument;
+import com.wesleykerr.steam.domain.player.FriendsList.Relationship;
 import com.wesleykerr.steam.domain.player.GameStats;
+import com.wesleykerr.utils.GsonUtils;
 
 public class SteamAPI {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SteamAPI.class);
@@ -23,9 +30,55 @@ public class SteamAPI {
 	public SteamAPI(QueryDocument queryDocument) {
 		this.queryDocument = queryDocument;
 	}
+	
+	public static void loadSteamProps() { 
+	    try { 
+	        Properties prop = new Properties();
+	        // TODO make this a parameter that is passed in.
+	        InputStream input = new FileInputStream("config/recommender.properties");
+	        LOGGER.info("Input: " + input);
+	        prop.load(input);
+	        System.setProperty("steam.key", prop.getProperty("steamKey"));
+	    } catch (Exception e) { 
+	        throw new RuntimeException(e);
+	    }
+	}
+	
+	public List<Relationship> gatherFriends(long steamId) { 
+        String key = System.getProperty("steam.key");
+        if (key == null)  
+            throw new RuntimeException("Forgot to initialize the steam.key");
+        
+        URIBuilder builder = new URIBuilder();
+        builder.setScheme("http").setHost(HOST).setPath("/ISteamUser/GetFriendList/v0001/")
+            .setParameter("key", key)
+            .setParameter("steamid", String.valueOf(steamId ))
+            .setParameter("relationship", "friend");
+        
+        try { 
+            JsonObject obj = queryDocument.requestJSON(builder.build(), 2);
+            if (!obj.has("friendslist")) {
+                LOGGER.info("Private profile " + steamId);
+                return null;
+            }
+
+            List<Relationship> list = Lists.newArrayList();
+            JsonObject friendsObj = obj.get("friendslist").getAsJsonObject();
+            JsonArray friendsArray = friendsObj.get("friends").getAsJsonArray();
+            for (JsonElement element : friendsArray) { 
+                list.add(GsonUtils.getDefaultGson().fromJson(element.toString(), Relationship.class));
+            }
+            return list;
+        } catch (URISyntaxException e) {
+            LOGGER.error(e.getMessage());
+        }
+        return null;
+	}
 
 	public List<GameStats> gatherOwnedGames(long steamId, Map<Long,List<String>> genreMap) { 
 		String key = System.getProperty("steam.key");
+        if (key == null)  
+            throw new RuntimeException("Forgot to initialize the steam.key");
 		
     	URIBuilder builder = new URIBuilder();
     	builder.setScheme("http").setHost(HOST).setPath("/IPlayerService/GetOwnedGames/v0001/")
@@ -35,30 +88,30 @@ public class SteamAPI {
 
     	List<GameStats> statsArray = new ArrayList<GameStats>();
     	try {
-			JSONObject obj = queryDocument.requestJSON(builder.build(), 2);
-			JSONObject response = (JSONObject) obj.get("response");
-			if (response.isEmpty()) {
+			JsonObject obj = queryDocument.requestJSON(builder.build(), 2);
+			JsonObject response = obj.get("response").getAsJsonObject();
+			if (!response.has("games")) {
 				LOGGER.info("Private profile " + steamId);
 				return statsArray;
 			}
 			LOGGER.debug(obj.toString());
 			
-			JSONArray array = (JSONArray) response.get("games");
+			JsonArray array = response.get("games").getAsJsonArray();
 			if (array == null)
 				return statsArray;
 			
-			for (Object object : array) { 
-				JSONObject jsonObj = (JSONObject) object;
+			for (JsonElement element : array) { 
+			    JsonObject jsonObj = element.getAsJsonObject();
 				GameStats stats = new GameStats();
-				stats.setAppid((Long) jsonObj.get("appid"));
+				stats.setAppid(jsonObj.get("appid").getAsLong());
 				stats.setGenres(genreMap.get(stats.getAppid()));
 				
-				if (jsonObj.containsKey("playtime_forever")) { 
-					stats.setCompletePlaytime((Long) jsonObj.get("playtime_forever"));
+				if (jsonObj.has("playtime_forever")) { 
+					stats.setCompletePlaytime(jsonObj.get("playtime_forever").getAsLong());
 				}
 				
-				if (jsonObj.containsKey("playtime_2weeks")) {
-					stats.setRecentPlaytime((Long) jsonObj.get("playtime_2weeks"));
+				if (jsonObj.has("playtime_2weeks")) {
+					stats.setRecentPlaytime(jsonObj.get("playtime_2weeks").getAsLong());
 				}
 				statsArray.add(stats);
 			}
