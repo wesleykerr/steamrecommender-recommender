@@ -27,8 +27,8 @@ import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.wesleykerr.steam.gson.GameStats;
-import com.wesleykerr.steam.gson.Player;
+import com.wesleykerr.steam.domain.player.GameStats;
+import com.wesleykerr.steam.domain.player.Player;
 
 /**
  *

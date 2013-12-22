@@ -1,5 +1,6 @@
 package com.wesleykerr.steam;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -10,15 +11,17 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
+import com.wesleykerr.utils.Utils;
 
 /**
  * We are requiring that the QueryDocument
@@ -72,12 +75,13 @@ public class QueryDocument {
 	 * @param uri
 	 * @return
 	 */
-	public JSONObject requestJSON(URI uri, int maxRetries) {     	
+	public JsonObject requestJSON(URI uri, int maxRetries) {     	
 		int retries = 0;
-    	JSONObject jsonObj = null;
+    	JsonObject jsonObj = null;
 		do { 
 			try { 
 	        	HttpGet httpget = new HttpGet(uri);
+	        	httpget.setHeader("User-Agent", "steamrecommender.com");
 	        	HttpResponse response = httpClient.execute(httpget);
 	        	counter.incrCounter();
 
@@ -90,13 +94,13 @@ public class QueryDocument {
 		 	       
 		        	if (entity != null) { 
 		            	try { 
-		            		Object obj = JSONValue.parse(new InputStreamReader(entity.getContent()));
-		            		jsonObj = (JSONObject) obj;
-		            		if (jsonObj == null) {
+		            	    JsonParser parser = new JsonParser();
+		            	    JsonElement element = parser.parse(new InputStreamReader(entity.getContent()));
+		            		if (element == null) {
 		        	    		LOGGER.error("ERROR - empty content" + response.toString());
 		            			return null;
 		            		}
-		            		
+		            		jsonObj = element.getAsJsonObject();
 		        		} finally { 
 		        			entity.getContent().close();
 		        		}

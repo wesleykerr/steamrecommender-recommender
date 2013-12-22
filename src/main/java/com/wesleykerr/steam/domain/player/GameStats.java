@@ -1,6 +1,8 @@
-package com.wesleykerr.steam.gson;
+package com.wesleykerr.steam.domain.player;
 
 import java.util.List;
+
+import com.wesleykerr.utils.GsonUtils;
 
 public class GameStats {
 	private long appid;
@@ -66,5 +68,10 @@ public class GameStats {
 	 */
 	public void setGenres(List<String> genres) {
 		this.genres = genres;
+	}
+	
+	@Override
+	public String toString() { 
+	    return GsonUtils.getDefaultGson().toJson(this);
 	}
 }
