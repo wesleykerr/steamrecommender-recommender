@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import com.couchbase.client.CouchbaseClient;
 import com.google.gson.JsonObject;
 import com.wesleykerr.steam.QueryDocument;
-import com.wesleykerr.steam.Utils;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
+import com.wesleykerr.utils.Utils;
 
 public class SearchCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchCollector.class);

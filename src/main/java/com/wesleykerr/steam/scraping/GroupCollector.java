@@ -20,7 +20,6 @@ import com.couchbase.client.CouchbaseClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.wesleykerr.steam.QueryDocument;
-import com.wesleykerr.steam.Utils;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.dao.PlayerURLsDAO;
@@ -28,6 +27,7 @@ import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
 import com.wesleykerr.steam.persistence.nosql.SteamPlayerDAOImpl;
 import com.wesleykerr.steam.persistence.sql.PlayerURLsDAOImpl;
+import com.wesleykerr.utils.Utils;
 
 public class GroupCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GroupCollector.class);

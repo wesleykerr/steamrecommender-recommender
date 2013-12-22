@@ -1,4 +1,4 @@
-package com.wesleykerr.steam;
+package com.wesleykerr.utils;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
