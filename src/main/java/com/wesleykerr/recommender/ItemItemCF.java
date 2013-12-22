@@ -8,29 +8,37 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.wesleykerr.recommender.utils.MatrixOps;
 import com.wesleykerr.recommender.utils.RecommMatrix;
 import com.wesleykerr.steam.domain.player.GameStats;
 import com.wesleykerr.steam.domain.player.Player;
 
-public abstract class ItemItemCF {
+public class ItemItemCF {
 	protected static final Gson gson = new Gson();
 	private static final Logger LOGGER = LoggerFactory.getLogger(ItemItemCF.class);
 
 	protected static int LOG_RECORDS = 1000;
+
 	protected RecommMatrix matrix;
+	protected Set<Long> allItems;
 
     public ItemItemCF() {
     	matrix = new RecommMatrix();
+    	allItems = Sets.newTreeSet();
     }
     
     /**
@@ -38,32 +46,42 @@ public abstract class ItemItemCF {
      * @param item
      * @param score
      */
-    public abstract void observe(Map<Long,Double> wItems);
-    
-    /**
-     * return the keys that we need for output.
-     * @return
-     */
-    public abstract List<Long> getKeys();
+    public void observe(Map<Long,Double> wItems) { 
+        List<Long> items = Lists.newArrayList(wItems.keySet());
+        Collections.sort(items);
+        
+        for (int i = 0; i < items.size(); ++i) { 
+            Long key1 = items.get(i);
+            Double value1 = wItems.get(key1);
+
+            for (int j = i; j < items.size(); ++j) {
+                Long key2 = items.get(j);
+                Double value2 = wItems.get(key2);
+
+                matrix.incTable(key1, key2, value1*value2);
+                matrix.incTable(key2, key1, value1*value2);
+            }
+        }
+        allItems.addAll(wItems.keySet());
+    }
     
     /**
      * Save the learned matrix to file.
      * @param file - the file to write the results to.
      * @throws Exception
      */
-    public void output(String file) throws Exception { 
-    	List<Long> keys = getKeys();
+    public static void output(String file, List<Long> items, RecommMatrix matrix) throws Exception { 
     	BufferedWriter out = new BufferedWriter(new FileWriter(file));
     	out.write("item");
-    	for (Long key : keys) {
+    	for (Long key : items) {
     		out.write(",");
     		out.write(Long.toString(key));
     	}
     	out.write("\n");
 
-    	for (Long col : keys) {
+    	for (Long col : items) {
     		out.write(Long.toString(col));
-    		for (Long row : keys) {
+    		for (Long row : items) {
         		out.write("," + matrix.get(row,col));
     		}
     		out.write("\n");
@@ -93,8 +111,8 @@ public abstract class ItemItemCF {
         		
     			try { 
     				Player p = gson.fromJson((String) tokens[1].toString(), Player.class);
-    				emitter.observe(this, p);
-    				
+    				observe(emitter.emit(this, p));
+    				    
     				++count;
     				if (count % LOG_RECORDS == 0)
     					LOGGER.info("Observed " + count + " players");
@@ -109,12 +127,34 @@ public abstract class ItemItemCF {
     	}    
     }
     
+    public static void main(String[] args) throws Exception {       
+        ItemItemCF.LOG_RECORDS = 20000;
+        ItemItemCF cf = new ItemItemCF();
+        RewardEmitter emitter = new BinaryNormalizedEmitter();
+
+        String input = "/data/steam/training-data.gz";
+        String output = "/data/steam/heats.csv";
+        
+        cf.loadCompressed(input, emitter);
+        RecommMatrix matrix = MatrixOps.cosine(Lists.newArrayList(cf.allItems), cf.matrix);
+        
+        output(output, Lists.newArrayList(cf.allItems), matrix);
+        LOGGER.info("total number of items " + cf.allItems.size());
+    }
+    
+    /**
+     * The RewardEmitter is the one that emits all of the games
+     * that the player has played.
+     * @author wkerr
+     *
+     */
     static interface RewardEmitter { 
-    	public void observe(ItemItemCF cf, Player p);
+    	public Map<Long,Double> emit(ItemItemCF cf, Player p);
     }
     
     static class BinaryEmitter implements RewardEmitter { 
-    	public void observe(ItemItemCF cf, Player p) {
+        @Override
+    	public Map<Long,Double> emit(ItemItemCF cf, Player p) {
     		Map<Long,Double> items = Maps.newTreeMap();
     		for (GameStats gameStats : p.getGames()) { 
     			// you have to play the game for at least 
@@ -122,12 +162,23 @@ public abstract class ItemItemCF {
     			if (gameStats.getCompletePlaytime() > 20) 
     				items.put(gameStats.getAppid(), 1.0);
     		}
-    		cf.observe(items);
+    		return items;
     	}
     }
     
+    static class BinaryNormalizedEmitter extends BinaryEmitter { 
+        @Override
+        public Map<Long,Double> emit(ItemItemCF cf, Player p) {
+            Map<Long,Double> items = super.emit(cf, p);
+            Map<Long,Double> nItems = Maps.newTreeMap();
+            for (Map.Entry<Long,Double> entry : items.entrySet()) 
+                nItems.put(entry.getKey(), entry.getValue() / items.size());
+            return nItems;
+        }
+    }
+
+    
     static class ScoreEmitter implements RewardEmitter { 
-        
         private Map<Long,Stats> statsMap;
         
         public void loadGameStats(String file) throws Exception { 
@@ -141,19 +192,16 @@ public abstract class ItemItemCF {
                         continue;
                     
                     long appId = Long.parseLong(tokens[0]);
-                    Stats s = new Stats();
-                    s.setQ25(Double.parseDouble(tokens[2]));
-                    s.setMedian(Double.parseDouble(tokens[3]));
-                    s.setQ75(Double.parseDouble(tokens[4]));
-                    statsMap.put(appId, s);
+                    statsMap.put(appId, Stats.create(tokens[2], tokens[3], tokens[4]));
                 }
             } finally { 
                 if (in != null)
                     in.close();
             }
         }
-        
-        public void observe(ItemItemCF cf, Player p) {
+
+        @Override
+        public Map<Long,Double> emit(ItemItemCF cf, Player p) {
             Map<Long,Double> items = Maps.newTreeMap();
             for (GameStats gameStats : p.getGames()) { 
                 // you haven't played the game if you played less than 20 minutes.
@@ -168,7 +216,7 @@ public abstract class ItemItemCF {
 
                 items.put(gameStats.getAppid(), getScore(gameStats.getCompletePlaytime(), s));
             }
-            cf.observe(items);
+            return items;
         }
         
         public double getScore(long minutesPlayed, Stats stats) { 
@@ -195,22 +243,10 @@ public abstract class ItemItemCF {
             return median;
         }
         /**
-         * @param median the median to set
-         */
-        public void setMedian(double median) {
-            this.median = median;
-        }
-        /**
          * @return the q25
          */
         public double getQ25() {
             return q25;
-        }
-        /**
-         * @param q25 the q25 to set
-         */
-        public void setQ25(double q25) {
-            this.q25 = q25;
         }
         /**
          * @return the q75
@@ -218,11 +254,13 @@ public abstract class ItemItemCF {
         public double getQ75() {
             return q75;
         }
-        /**
-         * @param q75 the q75 to set
-         */
-        public void setQ75(double q75) {
-            this.q75 = q75;
+        
+        public static Stats create(String q25, String median, String q75) { 
+            Stats s = new Stats();
+            s.q25 = Double.parseDouble(q25);
+            s.median = Double.parseDouble(median);
+            s.q75 = Double.parseDouble(q75);
+            return s;
         }
     }    
 }

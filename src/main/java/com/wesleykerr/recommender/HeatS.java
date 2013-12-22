@@ -47,7 +47,6 @@ public class HeatS extends ItemItemCF {
     	}
     }
     
-	@Override
 	public List<Long> getKeys() {
 		return Lists.newArrayList(itemTotals.keySet());
 	}   
@@ -73,7 +72,8 @@ public class HeatS extends ItemItemCF {
 		
     	heats.loadCompressed(input, emitter);
     	heats.rowNormalize();
-    	heats.output(output);
+    	
+    	output(output, heats.getKeys(), heats.matrix);
 //    	heats.saveMatrixPb("/data/steam/heats.pb", false);
     	LOGGER.info("total number of items " + heats.getKeys().size());
     }
