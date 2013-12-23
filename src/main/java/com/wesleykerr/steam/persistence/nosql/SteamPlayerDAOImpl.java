@@ -3,6 +3,9 @@ package com.wesleykerr.steam.persistence.nosql;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import net.spy.memcached.PersistTo;
+import net.spy.memcached.ReplicateTo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +36,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             obj.addProperty("_id", String.valueOf(steamId));
             obj.addProperty("visible", true);
             obj.addProperty("updateDateTime", 0);
-            client.add(String.valueOf(steamId), obj.toString());
+            client.add(String.valueOf(steamId), obj.toString(), PersistTo.MASTER, ReplicateTo.ONE);
             return true;
         }
         return false;
@@ -54,9 +57,10 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     public List<Player> getSteamIdsWithNoFriends(int limit) { 
         List<Player> results = Lists.newArrayList();
         View v = client.getView("players", "missing_friends");
-        Query q = new Query().setLimit(limit).setIncludeDocs(true);
+        Query q = new Query().setReduce(false).setLimit(limit).setIncludeDocs(true);
         ViewResponse response = client.query(v, q);
         for (ViewRow row : response) { 
+            LOGGER.info("View: " + row.getValue());
             Player player = GsonUtils.getDefaultGson().fromJson(row.getValue(), Player.class);
             results.add(player);
         }

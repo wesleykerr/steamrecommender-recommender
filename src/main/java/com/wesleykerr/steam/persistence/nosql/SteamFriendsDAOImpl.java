@@ -2,6 +2,9 @@ package com.wesleykerr.steam.persistence.nosql;
 
 import java.util.concurrent.ExecutionException;
 
+import net.spy.memcached.PersistTo;
+import net.spy.memcached.ReplicateTo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +40,14 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
         update(friendsList.getId(), value);
     }
     
+    @Override
+    public boolean exists(String key) { 
+        return client.get(key) != null;
+    }
+    
     private void update(String key, String value) { 
         try {
-            client.set(key, value).get();
+            client.set(key, value, PersistTo.MASTER, ReplicateTo.ONE).get();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {

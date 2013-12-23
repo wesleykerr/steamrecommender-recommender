@@ -1,6 +1,7 @@
 package com.wesleykerr.steam.scraping;
 
 import java.util.List;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ public class FriendsCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(FriendsCollector.class);
     private static final String HOST = "api.steampowered.com";
 
-    private static final int NUM_BATCHES = 2;
+    private static final int NUM_BATCHES = 10;
     private static final int BATCH_SIZE = 100;
 
     private QueryDocument queryDocument;
@@ -67,6 +68,7 @@ public class FriendsCollector {
     }
     
     public void runBatch(int batchSize) { 
+        Random random = new Random();
         List<Player> steamIds = steamPlayerDAO.getSteamIdsWithNoFriends(batchSize);
         
         SteamAPI steamAPI = new SteamAPI(queryDocument);
@@ -75,13 +77,19 @@ public class FriendsCollector {
             long steamId = Long.parseLong(player.getId());
             List<Relationship> friends = steamAPI.gatherFriends(steamId);
 
-            Builder builder = Builder.create()
+            Player updated = Builder.create()
                     .withPlayer(player)
-                    .withFriendsMillis(System.currentTimeMillis());
-            Player updated = builder.build();
+                    .withFriendsMillis(System.currentTimeMillis())
+                    .build();
             String updatedDocument = GsonUtils.getDefaultGson().toJson(updated);
             steamPlayerDAO.update(updated.getId(), updatedDocument);
-            
+//            LOGGER.info("Updated: " + updatedDocument);
+
+            if (steamFriendsDAO.exists(player.getId())) {
+                LOGGER.info("... " + player.getFriendsMillis());
+                continue;
+            }
+
             // TODO: send this update through some event system to that it is
             // persisted to the master dataset (since it is a change).  It will
             // be eventually persisted with this model when we update the player's games
@@ -109,7 +117,7 @@ public class FriendsCollector {
                 LOGGER.error("Player is visible, but has no friends (should be private)");
             }
             
-            Utils.delay(500);
+            Utils.delay(random.nextInt(5)*100 + 500);
         }
     }
     

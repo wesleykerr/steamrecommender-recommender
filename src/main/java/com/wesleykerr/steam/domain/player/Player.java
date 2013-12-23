@@ -17,8 +17,8 @@ public class Player {
 	
 	private List<GameStats> games;
 
-	private long updateDateTime;
-	private long friendsMillis;
+	private Long updateDateTime;
+	private Long friendsMillis;
 	
 	private boolean visible;
 	
@@ -33,7 +33,15 @@ public class Player {
 		return id;
 	}
 
-	/**
+    /**
+     * @return the _rev
+     */
+    public String getRev() {
+        return rev;
+    }
+    
+
+    /**
 	 * @return the games
 	 */
 	public List<GameStats> getGames() {
@@ -43,22 +51,22 @@ public class Player {
 	/**
 	 * @return the updateDateTime
 	 */
-	public long getUpdateDateTime() {
+	public Long getUpdateDateTime() {
 		return updateDateTime;
 	}
+
+	/**
+	 * @return the friendsMillis
+	 */
+	public Long getFriendsMillis() { 
+        return friendsMillis;
+    }
 
 	/**
 	 * @return the visible
 	 */
 	public boolean isVisible() {
 		return visible;
-	}
-
-	/**
-	 * @return the _rev
-	 */
-	public String getRev() {
-		return rev;
 	}
 
 
@@ -100,12 +108,12 @@ public class Player {
 	        return this;
 	    }
 	    
-	    public Builder withUpdateDateTime(long updateDateTime) { 
+	    public Builder withUpdateDateTime(Long updateDateTime) { 
 	        player.updateDateTime = updateDateTime;
 	        return this;
 	    }
 	    
-	    public Builder withFriendsMillis(long friendsMillis) { 
+	    public Builder withFriendsMillis(Long friendsMillis) { 
 	        player.friendsMillis = friendsMillis;
 	        return this;
 	    }

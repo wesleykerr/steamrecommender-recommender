@@ -6,7 +6,17 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 
+import net.spy.memcached.PersistTo;
+import net.spy.memcached.ReplicateTo;
+
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.View;
+import com.couchbase.client.protocol.views.ViewResponse;
+import com.couchbase.client.protocol.views.ViewRow;
+import com.wesleykerr.steam.domain.player.Player;
+import com.wesleykerr.steam.domain.player.Player.Builder;
+import com.wesleykerr.utils.GsonUtils;
 
 public class Couchbase {
 
@@ -17,10 +27,21 @@ public class Couchbase {
     
     public static void main(String[] args) throws Exception { 
         CouchbaseClient client = connect("default");
-        Object o = client.get("76561197960272967");
-        System.out.println(o.toString());
         
-        client.delete("to_delete").get();
+        View v = client.getView("tmp", "friends_found");
+        Query q = new Query().setReduce(false).setIncludeDocs(true);
+        ViewResponse response = client.query(v, q);
+        for (ViewRow row : response) { 
+            Player player = GsonUtils.getDefaultGson().fromJson(row.getValue(), Player.class);
+            Player updated = Builder.create()
+                    .withPlayer(player)
+                    .withFriendsMillis(null)
+                    .build();
+            
+            client.set(updated.getId(), GsonUtils.getDefaultGson().toJson(updated), PersistTo.MASTER, ReplicateTo.ONE).get();
+            System.out.println(updated.getFriendsMillis());
+        }
+
         client.shutdown();
     }
 }
