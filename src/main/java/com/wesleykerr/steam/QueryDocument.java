@@ -1,6 +1,5 @@
 package com.wesleykerr.steam;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -11,6 +10,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -86,6 +86,7 @@ public class QueryDocument {
 	        	counter.incrCounter();
 
 	        	if (response.getStatusLine().getStatusCode() == 500) {
+	        	    EntityUtils.consume(response.getEntity());
 	        		LOGGER.warn("Server Error: " + response.toString());
 					++retries;
 					Utils.delay(retries*1000);
@@ -112,7 +113,7 @@ public class QueryDocument {
 				Utils.delay(retries*1000);
 	    	}
 			
-			LOGGER.debug("jsonObj: " + jsonObj);
+			LOGGER.info("jsonObj: " + jsonObj);
 		} while (jsonObj == null && retries < maxRetries);
 		return jsonObj;
 	}

@@ -64,9 +64,11 @@ public class GamesDAOImpl implements GamesDAO {
                 game.setUpdatedDateTime(c);
 
                 Timestamp lastCheckedTS = rs.getTimestamp("last_checked");
-                Calendar c2 = Calendar.getInstance();
-                c2.setTimeInMillis(lastCheckedTS.getTime());
-                game.setLastChecked(c2);
+                if (lastCheckedTS != null) {
+                    Calendar c2 = Calendar.getInstance();
+                    c2.setTimeInMillis(lastCheckedTS.getTime());
+                    game.setLastChecked(c2);
+                }
                 return game;
             }
         }

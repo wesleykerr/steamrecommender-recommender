@@ -1,227 +1,198 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.wesleykerr.recommender.cf;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.zip.GZIPInputStream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
+import org.codehaus.jackson.node.ObjectNode;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-import com.wesleykerr.steam.domain.player.GameStats;
-import com.wesleykerr.steam.domain.player.Player;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.wesleykerr.recommender.utils.TableUtils;
+import com.wesleykerr.utils.GsonUtils;
 
 /**
- *
+ * The assumption is that the data that goes through this
+ * training code is "clean" in the sense that inactive items
+ * have been removed and only things that can be recommended
+ * remain.
+ * 
  * @author wkerr
+ *
  */
 public class CollaborativeFilter {
-	private static final Gson gson = new Gson();
-	private static final Logger LOGGER = LoggerFactory.getLogger(CollaborativeFilter.class);
+    private static final Logger LOGGER = Logger.getLogger(CollaborativeFilter.class);
 
-	private Set<Long> allItems;
-	
-	/** Using a table allows us to have rows/columns that
-	 *  are non-zero based.  
-	 */
-	private Table<Long,Long,Double> matrix;
-
-    public CollaborativeFilter() {
-    	matrix = TreeBasedTable.create();
-    	allItems = new TreeSet<>();
+    private Emitter emitter;
+    
+    private boolean rowNorm;
+    private double threshold;
+    
+    public CollaborativeFilter() { 
+        rowNorm = false;
+    }
+    
+    public static class Builder { 
+        CollaborativeFilter cf;
+        
+        private Builder() {
+            cf = new CollaborativeFilter();
+        }
+        
+        public Builder withEmitter(Emitter emitter) { 
+            cf.emitter = emitter;
+            return this;
+        }
+        
+        public Builder withRowNorm(boolean rowNorm) { 
+            cf.rowNorm = rowNorm;
+            return this;
+        }
+        
+        public Builder withThreshold(double threshold) { 
+            cf.threshold = threshold;
+            return this;
+        }
+        
+        public CollaborativeFilter build() { 
+            Preconditions.checkNotNull(cf);
+            CollaborativeFilter tmp = cf;
+            cf = null;
+            return tmp;
+        }
+        
+        public static Builder create() { 
+            return new Builder();
+        }
     }
     
     /**
-     * Increment the value in the table by a given amount.
-     * @param row
-     * @param col
-     * @param v
+     * The reader is a connection to a list of players that we
+     * need to process in order to get values for our matrix.
+     * @param reader
+     * @return
+     * @throws Exception
      */
-    private void incTable(long row, long col, double v) {
-    	matrix.put(row, col, v + get(row, col));
+    public Table<Long,Long,Double> processPlayers(Reader reader) throws Exception { 
+        JsonParser parser = new JsonParser();
+        Table<Long,Long,Double> table = TreeBasedTable.create();
+        int lineCount = 0;
+        try (BufferedReader in = new BufferedReader(reader)) { 
+            for (String line = in.readLine(); line != null && in.ready(); line = in.readLine()) { 
+                JsonObject obj = parser.parse(line).getAsJsonObject();
+                TableUtils.mergeInto(table, processPlayer(obj));
+                
+                lineCount++;
+                if (lineCount % 100000 == 0)
+                    LOGGER.info("processed " + lineCount + " players");
+            }
+        }
+        LOGGER.info("procsssed " + lineCount + " players");
+        return finalizeMatrix(table);
     }
-    
+
     /**
-     * Grab the value from the matrix.  If non-existent, then
-     * return a default value.
-     * @param row
-     * @param col
+     * Retrieve a single player's contribution to the item-item matrix.
+     * We expect a JSON object with the following template --
+     *   { "userId": "xxx", ratings: [ {"item": 123, "rating": 2.3 }, ... ]
+     * @param obj
      * @return
      */
-    public double get(long row, long col) { 
-		Double value = matrix.get(row, col);
-		return value == null ? 0.0 : value;
+    public Table<Long,Long,Double> processPlayer(JsonObject obj) { 
+        JsonArray ratingsArray = obj.get("ratings").getAsJsonArray();
+        List<Long> playerItems = Lists.newArrayList();
+        for (JsonElement node : ratingsArray) { 
+            JsonObject nodeObj = node.getAsJsonObject();
+            if (nodeObj.get("rating").getAsDouble() >= threshold) { 
+                playerItems.add(nodeObj.get("item").getAsLong());
+            }
+        }
+        return emitter.emit(playerItems);
     }
     
     /**
-     * Observe the items in the map.
-     * @param item
-     * @param score
+     * Update the values in the matrix to represent cosine similarities
+     * instead of just counts.  If this collaborative filter uses  row 
+     * normalization, perform that as well.
+     * @param matrix
+     * @return
      */
-    public void observe(Map<Long,Double> items) { 
-    	List<Long> itemList = Lists.newArrayList(items.keySet());
-    	for (int i = 0; i < itemList.size(); ++i) { 
-    		Long key1 = itemList.get(i);
-    		incTable(key1, key1, items.get(key1));
+    public Table<Long,Long,Double> finalizeMatrix(Table<Long,Long,Double> table) { 
+        // At this point the matrix should be a upper diagonal matrix.
+        LOGGER.info("finalize matrix " + 
+                table.rowKeySet().size() + " rows x " + 
+                table.columnKeySet().size() + " cols");
+        
+        Table<Long,Long,Double> result = HashBasedTable.create();
+        for (Table.Cell<Long,Long,Double> cell : table.cellSet()) { 
+            result.put(cell.getRowKey(), cell.getColumnKey(), cell.getValue());
+            if (!cell.getRowKey().equals(cell.getColumnKey())) { 
+                result.put(cell.getColumnKey(), cell.getRowKey(), cell.getValue());
+            }
+        }
+        
+        result = TableUtils.computeCosine(result);
+        if (rowNorm)
+            result = TableUtils.rowNormalize(result);
+        return result;
+    }
+    
+    public static void write(String file, ObjectNode obj) throws Exception { 
+        try (BufferedWriter output = new BufferedWriter(new FileWriter(file))) { 
+            output.write(GsonUtils.getDefaultGson().toJson(obj));
+            output.close();
+        }
+    }
+    
+    public static void main(String[] args) throws Exception { 
+        ExecutorService service = Executors.newFixedThreadPool(3);
 
-    		for (int j = i+1; j < items.size(); ++j) {
-    			Long key2 = itemList.get(j);
-    			
-    			double sumRating = items.get(key1) + items.get(key2);
-    			incTable(key1, key2, sumRating);
-    			incTable(key2, key1, sumRating);
-    		}
-    		
-    		allItems.add(key1);
-    	}
-    }
-    
-    /**
-     * Observe is used when we are talking about items that are either
-     * interacted with or they are not.  If they user interacted with an item 
-     * then it is part of the list of items.  The user id is left off since
-     * it is not necessary for this item-item collaborative filter.
-     * @param items
-     */
-    public void observe(List<Long> items) { 
-    	for (int i = 0; i < items.size(); ++i) { 
-    		Long key1 = items.get(i);
-    		incTable(key1, key1, 1);
+        List<Future<Boolean>> futures = Lists.newArrayList();
+        futures.add(service.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                CollaborativeFilter cf = CollaborativeFilter.Builder.create()
+                        .withEmitter(Emitter.cosineRowNorm)
+                        .withRowNorm(false)
+                        .withThreshold(0.5d)
+                        .build();
+                
+                File inputFile = new File("/data/steam/ratings-file.gz");
+                try (InputStream inStream = new FileInputStream(inputFile);
+                        InputStream gzipInputStream = new GZIPInputStream(inStream);
+                        Reader reader = new InputStreamReader(gzipInputStream, "UTF-8")) { 
+                    Table<Long,Long,Double> results = cf.processPlayers(reader);
+                    // TODO: make this work again.
+                    TableUtils.writeCSVMatrix(results, new File("/data/steam/model.csv"));
+                    return Boolean.TRUE;
+                }
+            } 
+        }));
 
-    		for (int j = i+1; j < items.size(); ++j) {
-    			Long key2 = items.get(j);
-    			
-    			incTable(key1, key2, 1);
-    			incTable(key2, key1, 1);
-    		}
-    		
-    		allItems.add(key1);
-    	}
-    }
-    
-    public void computeCosine() { 
-    	List<Long> keys = new ArrayList<>(allItems);
-    	Table<Long,Long,Double> cosMatrix = TreeBasedTable.create();
-    	for (Long row : keys) {
-    		for (Long col : keys) {
-    			double bothCount = get(row, col);
-    			double rowCount = get(row, row);
-    			double colCount = get(col, col);
-    			double cosSim = bothCount / (Math.sqrt(rowCount)*Math.sqrt(colCount));
-    			
-    			cosMatrix.put(row, col, cosSim);
-    		}
-    	}
-    	matrix = cosMatrix;
-    }
-    
-    public void rowNormalize() { 
-    	List<Long> keys = new ArrayList<>(allItems);
-    	for (Long row : keys) { 
-    		double sum = 0.0;
-    		for (Long col : keys) { 
-    			sum += get(row, col);
-    		}
-    		
-    		for (Long col : keys) { 
-    			matrix.put(row, col, get(row, col) / sum);
-    		}
-    	}
-    }
-    
-    public void output(String file) throws Exception { 
-    	List<Long> keys = new ArrayList<>(allItems);
-    	BufferedWriter out = new BufferedWriter(new FileWriter(file));
-
-    	out.write("item");
-    	for (Long key : keys) {
-    		out.write(",");
-    		out.write(Long.toString(key));
-    	}
-    	out.write("\n");
-
-    	for (Long col : keys) {
-    		out.write(Long.toString(col));
-    		for (Long row : keys) {
-        		out.write("," + get(row,col));
-    		}
-    		out.write("\n");
-    	}
-    	out.close();
-    }
-    
-    public static void main(String[] args) throws Exception {     	
-    	CollaborativeFilter cf = new CollaborativeFilter();
-    	RewardEmitter emitter = new BinaryEmitter();
-
-    	BufferedReader in = null;
-    	try { 
-    		String file = "/data/steam/training-data.gz";
-    		InputStream fileStream = new FileInputStream(file);
-    		InputStream gzipStream = new GZIPInputStream(fileStream);
-    		Reader decode = new InputStreamReader(gzipStream, "UTF-8");
-        	in = new BufferedReader(decode);
-        	
-        	int count = 0;
-        	while (in.ready()) { 
-        		String[] tokens = in.readLine().split("\t");
-        		if (tokens.length != 2)
-        			throw new RuntimeException("UNKNOWN");
-        		
-    			try { 
-    				Player p = gson.fromJson((String) tokens[1].toString(), Player.class);
-    				emitter.observe(cf, p);
-    				
-    				++count;
-    				if (count % 10000 == 0)
-    					LOGGER.debug("Observed " + count + " players");
-    			} catch (JsonSyntaxException e) { 
-    				LOGGER.error("malformed json: " + tokens[1]);
-    			}
-        	}
-        	in.close();
-        	cf.computeCosine();
-        	cf.rowNormalize();
-        	cf.output("/data/steam/item_item.csv");
-        	LOGGER.info("total number of items " + cf.allItems.size());
-    	} finally { 
-    		if (in != null)
-    			in.close();
-    	}
-    	
-    }
-    
-    static interface RewardEmitter { 
-    	public void observe(CollaborativeFilter cf, Player p);
-    }
-    
-    static class BinaryEmitter implements RewardEmitter { 
-    	public void observe(CollaborativeFilter cf, Player p) {
-    		List<Long> items = Lists.newArrayList();
-    		for (GameStats gameStats : p.getGames()) { 
-    			if (gameStats.getCompletePlaytime() > 0) 
-    				items.add(gameStats.getAppid());
-    		}
-    		cf.observe(items);
-    	}
+        for (Future<Boolean> f : futures) { 
+            LOGGER.info("Received: " + f.get());
+        }
+        
+        service.shutdown();
     }
 }

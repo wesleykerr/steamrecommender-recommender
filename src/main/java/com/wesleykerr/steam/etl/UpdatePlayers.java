@@ -88,7 +88,7 @@ public class UpdatePlayers {
                     .isVisible(list.size() > 0)
                     .withUpdateDateTime(millis);
             Player updated = builder.build();
-			LOGGER.info("query plalyer " + updated.getId());
+			LOGGER.info("query player " + updated.getId());
 
 			String updatedDocument = gson.toJson(updated);
 			client.set(updated.getId(), updatedDocument).get();
