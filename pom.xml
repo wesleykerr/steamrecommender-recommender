@@ -7,10 +7,28 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+  
+  <distributionManagement>
+      <repository>
+          <id>releases</id>
+          <name>ETL Server Release</name>
+          <url>scp://192.168.0.8/repo/releases</url>
+          <layout>default</layout>
+      </repository>
+      <snapshotRepository>
+          <id>snapshots</id>
+          <name>ETL Server Release</name>
+          <url>scp://192.168.0.8/repo/snapshots</url>
+          <layout>default</layout>
+      </snapshotRepository>
+  </distributionManagement>
+
   <scm>
-    <developerConnection>scm:git:ssh://git@bitbucket.org/wesleykerr/recommender.git</developerConnection>
+    <connection>scm:git:git@bitbucket.org:wesleykerr/recommender.git</connection>
+    <developerConnection>scm:git:git@bitbucket.org:wesleykerr/recommender.git</developerConnection>
     <tag>HEAD</tag>
   </scm> 
+
   <repositories>
     <repository>
       <id>couchbase</id>
@@ -89,6 +107,14 @@
   </dependencies>
   <name>recommender</name>
   <build>
+      <extensions>
+          <extension>
+              <groupId>org.apache.maven.wagon</groupId>
+              <artifactId>wagon-ssh</artifactId>
+              <version>1.0</version>
+          </extension>
+      </extensions>
+
      <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
