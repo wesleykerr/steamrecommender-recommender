@@ -90,7 +90,7 @@ public class DeployModel {
     public static void main(String[] args) throws Exception { 
         // TODO read these in as a parameters
         int modelId = 1;  
-        String input = "data/steam/model.csv";
+        String input = "/data/steam/model.csv";
         
         DeployModel deployModel = new DeployModel(modelId);
         deployModel.loadMatrix(input);
