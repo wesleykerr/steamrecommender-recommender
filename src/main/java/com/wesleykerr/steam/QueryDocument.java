@@ -112,8 +112,6 @@ public class QueryDocument {
 				++retries;
 				Utils.delay(retries*1000);
 	    	}
-			
-			LOGGER.info("jsonObj: " + jsonObj);
 		} while (jsonObj == null && retries < maxRetries);
 		return jsonObj;
 	}
