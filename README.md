@@ -35,6 +35,16 @@ All of the players are stored within the div -
 
 git, openssh-client, openssh-server
 
+### Ruby
+
+install RVM and ruby 1.9.3
+install gems:
+ 
+   gem install mysql2
+   gem install httparty
+   gem install nokogiri
+   gem install damerau-levenshtein
+ 
 ### Github and Bitbucket
 
 add new keys and register them to bypass entering your password with every commit, push, pull
