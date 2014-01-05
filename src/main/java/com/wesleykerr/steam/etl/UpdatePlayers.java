@@ -63,7 +63,7 @@ public class UpdatePlayers {
 		queryDoc = new QueryDocument(counter);
 		info = new SteamAPI(queryDoc);
 
-		List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
+		List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
 		client = new CouchbaseClient(hosts, "default", "");
 	}
 	
@@ -105,7 +105,7 @@ public class UpdatePlayers {
 	
 	public static void main(String[] args) throws Exception { 
 		// "week_old_players" -- "new_players"
-		if (args.length != 3) {
+		if (args.length != 1) {
 			System.out.println("Usage: UpdatePlayers <view-name>");
 			System.exit(0);
 		}

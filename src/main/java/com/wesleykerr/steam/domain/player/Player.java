@@ -81,7 +81,8 @@ public class Player {
 	    public Builder withPlayer(Player p) {
 	        player.id = p.id;
 	        player.rev = p.rev;
-	        player.games = Lists.newArrayList(p.games);
+	        if (p.games != null) 
+	            player.games = Lists.newArrayList(p.games);
 	        player.updateDateTime = p.updateDateTime;
 	        player.friendsMillis = p.friendsMillis;
 	        player.visible = p.visible;
