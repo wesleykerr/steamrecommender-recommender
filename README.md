@@ -1,3 +1,16 @@
+Deploy New Version
+======
+
+    mvn clean install
+    mvn release:prepare
+    mvn release:perform
+
+The release is automatically moved over to the server.  Now ssh onto the server and update the symbolic
+link in /usr/local/game-recommender to point to the new release found in 
+
+    /repo/releases/com/wesleykerr/steam/recommender/<version>/recommender-<version>.jar
+
+
 
 Gathering Steam Players
 ======
