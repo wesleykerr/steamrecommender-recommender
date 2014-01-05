@@ -60,7 +60,6 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
         Query q = new Query().setReduce(false).setLimit(limit).setIncludeDocs(true);
         ViewResponse response = client.query(v, q);
         for (ViewRow row : response) { 
-            LOGGER.info("View: " + row.getValue());
             Player player = GsonUtils.getDefaultGson().fromJson(row.getValue(), Player.class);
             results.add(player);
         }
