@@ -10,17 +10,11 @@
   
   <distributionManagement>
       <repository>
-          <id>releases</id>
+          <id>ssh-releases</id>
           <name>ETL Server Release</name>
           <url>scp://192.168.0.8/repo/releases</url>
           <layout>default</layout>
       </repository>
-      <snapshotRepository>
-          <id>snapshots</id>
-          <name>ETL Server Release</name>
-          <url>scp://192.168.0.8/repo/snapshots</url>
-          <layout>default</layout>
-      </snapshotRepository>
   </distributionManagement>
 
   <scm>
@@ -109,9 +103,14 @@
   <build>
       <extensions>
           <extension>
-              <groupId>org.apache.maven.wagon</groupId>
               <artifactId>wagon-ssh</artifactId>
-              <version>1.0</version>
+              <groupId>org.apache.maven.wagon</groupId>
+              <version>2.5</version>
+          </extension>
+          <extension>
+              <artifactId>wagon-webdav-jackrabbit</artifactId>
+              <groupId>org.apache.maven.wagon</groupId>
+              <version>2.2</version>
           </extension>
       </extensions>
 
