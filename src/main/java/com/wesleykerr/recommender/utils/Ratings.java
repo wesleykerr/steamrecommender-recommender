@@ -77,6 +77,7 @@ public class Ratings {
                     game = gameDAO.get(gameId);
                     if (game == null) { 
                         LOGGER.info("Missing game: " + gameId);
+                        return null;
                     }
                     gameCache.put(gameId, game);
                 } catch (Exception e) { 
