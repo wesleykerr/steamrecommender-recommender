@@ -69,12 +69,25 @@ link from the latest recommender-0.0.x.jar to recommender.jar
 
 Remember to bacup the couchbase cluster before doing anything. 
 
-Schedule weekly backups of couchbase so that we can restore if something goes wrong.  These should be uploaded
-to dreamhost using rsync and that gives us off-site backups.
-
 http://www.couchbase.com/docs/couchbase-manual-2.0/couchbase-backup-restore-mac.html
+
+### Backups
+
+We have a taskforest script that runs once per week and assumes that we have our bitcasa drive mounted.  
+
+    sudo mount -tbitcasa wesley.n.kerr@gmail.com /home/wkerr/bitcasa -o password=<bitcasa password>
+
+Backup the couchbase server
+
+    /opt/couchbase/bin/cbbackup http://<admin>:<password>@192.168.0.8:8091 /tmp/backup-12022013
+    rsync -e ssh -av backup-12022013 b418667@hanjin.dreamhost.com:recommender 
+
+Backup the database
+
+    mysqldump -u recommender_etl -h mysql.seekerr.com -p --databases game_recommender > dreamhost_08172013.sql
 
 ### Cron Jobs
 
+    05 00 * * * /usr/local/bin/taskforest --config_file=/usr/local/taskforest/config/taskforest.cfg
 
 
