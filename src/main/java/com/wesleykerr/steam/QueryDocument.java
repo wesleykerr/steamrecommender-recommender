@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.stream.MalformedJsonException;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
 import com.wesleykerr.utils.Utils;
@@ -33,7 +34,7 @@ import com.wesleykerr.utils.Utils;
 public class QueryDocument {
 	private static final Logger LOGGER = LoggerFactory.getLogger(QueryDocument.class);
 	private static final int TIMEOUT = 120;
-
+	
 	private CounterDAO counter;
 	
 	private HttpClient httpClient;
@@ -75,13 +76,13 @@ public class QueryDocument {
 	 * @param uri
 	 * @return
 	 */
-	public JsonObject requestJSON(URI uri, int maxRetries) {     	
+	public JsonObject requestJSON(URI uri, String userAgent, int maxRetries) {     	
 		int retries = 0;
     	JsonObject jsonObj = null;
 		do { 
 			try { 
 	        	HttpGet httpget = new HttpGet(uri);
-	        	httpget.setHeader("User-Agent", "steamrecommender.com");
+	        	httpget.setHeader("User-Agent", userAgent);
 	        	HttpResponse response = httpClient.execute(httpget);
 	        	counter.incrCounter();
 
@@ -108,24 +109,11 @@ public class QueryDocument {
 		        	}
 	        	}
 	    	} catch (Exception e) { 
-	    		LOGGER.error("requestJSON " + e.getMessage());
+	    		LOGGER.error("requestJSON " + e.getMessage(), e);
 				++retries;
 				Utils.delay(retries*1000);
 	    	}
 		} while (jsonObj == null && retries < maxRetries);
 		return jsonObj;
-	}
-	
-	public static void main(String[] args) { 
-		System.setProperty("steam.key", "72A809B286ED454CC53C4D03EF798EE4");
-		
-		CounterDAO counterDAO = new CounterDAOImpl();
-		QueryDocument doc = new QueryDocument(counterDAO);
-		try {
-			doc.requestJSON(new URI("http://api.steampowered.com/"), 2);
-		} catch (URISyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 }

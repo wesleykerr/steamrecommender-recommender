@@ -1,5 +1,6 @@
 package com.wesleykerr.steam.etl;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -12,6 +13,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -27,36 +29,43 @@ public class SteamAPI {
 	
 	private QueryDocument queryDocument;
 
+	private String steamKey = null;
+	private String userAgent = null;
+	
 	public SteamAPI(QueryDocument queryDocument) {
 		this.queryDocument = queryDocument;
+		
+		loadSteamProps();
 	}
 	
-	public static void loadSteamProps() { 
+	private void loadSteamProps() { 
 	    try { 
 	        Properties prop = new Properties();
 	        // TODO make this a parameter that is passed in.
-	        InputStream input = new FileInputStream("config/recommender.properties");
-	        LOGGER.info("Input: " + input);
+	        InputStream input = SteamAPI.class.
+	                getClassLoader().
+	                getResourceAsStream("config/recommender.properties");
+
 	        prop.load(input);
-	        System.setProperty("steam.key", prop.getProperty("steamKey"));
+	        steamKey = prop.getProperty("steamKey");
+	        userAgent = prop.getProperty("userAgent");
 	    } catch (Exception e) { 
 	        throw new RuntimeException(e);
 	    }
 	}
 	
 	public List<Relationship> gatherFriends(long steamId) { 
-        String key = System.getProperty("steam.key");
-        if (key == null)  
-            throw new RuntimeException("Forgot to initialize the steam.key");
+	    Preconditions.checkNotNull(steamKey);
+	    Preconditions.checkNotNull(userAgent);
         
         URIBuilder builder = new URIBuilder();
         builder.setScheme("http").setHost(HOST).setPath("/ISteamUser/GetFriendList/v0001/")
-            .setParameter("key", key)
+            .setParameter("key", steamKey)
             .setParameter("steamid", String.valueOf(steamId ))
             .setParameter("relationship", "friend");
         
         try { 
-            JsonObject obj = queryDocument.requestJSON(builder.build(), 2);
+            JsonObject obj = queryDocument.requestJSON(builder.build(), userAgent, 2);
             if (!obj.has("friendslist")) {
                 LOGGER.info("Private profile " + steamId);
                 return null;
@@ -76,19 +85,18 @@ public class SteamAPI {
 	}
 
 	public List<GameStats> gatherOwnedGames(long steamId, Map<Long,List<String>> genreMap) { 
-		String key = System.getProperty("steam.key");
-        if (key == null)  
-            throw new RuntimeException("Forgot to initialize the steam.key");
+        Preconditions.checkNotNull(steamKey);
+        Preconditions.checkNotNull(userAgent);
 		
     	URIBuilder builder = new URIBuilder();
     	builder.setScheme("http").setHost(HOST).setPath("/IPlayerService/GetOwnedGames/v0001/")
-    		.setParameter("key", key)
+    		.setParameter("key", steamKey)
     		.setParameter("steamid", steamId+"")
     		.setParameter("include_played_free_games", "1");
 
     	List<GameStats> statsArray = new ArrayList<GameStats>();
     	try {
-			JsonObject obj = queryDocument.requestJSON(builder.build(), 2);
+			JsonObject obj = queryDocument.requestJSON(builder.build(), userAgent, 2);
 			JsonObject response = obj.get("response").getAsJsonObject();
 			if (!response.has("games")) {
 				LOGGER.info("Private profile " + steamId);

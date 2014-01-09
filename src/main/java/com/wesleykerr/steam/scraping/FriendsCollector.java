@@ -126,8 +126,6 @@ public class FriendsCollector {
         CouchbaseClient friendsClient = null;
         MySQL mySQL = null;
         try { 
-            SteamAPI.loadSteamProps();
-            
             defaultClient = Couchbase.connect("default");
             SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(defaultClient);
 

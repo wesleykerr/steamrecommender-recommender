@@ -26,18 +26,22 @@ public class SteamAPITest {
         counterDAO = new CounterDAOImpl();
         queryDocument = new QueryDocument(counterDAO);
 
-        try { 
-            InputStream input = new FileInputStream("config/recommender.properties");
-            Properties prop = new Properties();
-            prop.load(input);
-            System.setProperty("steam.key", prop.getProperty("steamKey"));
-        } catch (Exception e) { 
-            throw new RuntimeException(e);
-        }
+//        try { 
+//            InputStream input = new FileInputStream("config/recommender.properties");
+//            Properties prop = new Properties();
+//            prop.load(input);
+//            System.setProperty("steam.key", prop.getProperty("steamKey"));
+//        } catch (Exception e) { 
+//            throw new RuntimeException(e);
+//        }
     }
     
     @Test
-    @Ignore
+    public void testGatherOwnedGames() { 
+        
+    }
+    
+    @Test
     public void testPrivateFriendsList() { 
         long steamid = 76561198091316831L;
         
