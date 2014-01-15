@@ -1,6 +1,5 @@
 package com.wesleykerr.steam.etl;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -42,9 +41,7 @@ public class SteamAPI {
 	    try { 
 	        Properties prop = new Properties();
 	        // TODO make this a parameter that is passed in.
-	        InputStream input = SteamAPI.class.
-	                getClassLoader().
-	                getResourceAsStream("config/recommender.properties");
+	        InputStream input = new FileInputStream("config/recommender.properties");
 
 	        prop.load(input);
 	        steamKey = prop.getProperty("steamKey");
