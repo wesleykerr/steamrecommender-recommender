@@ -28,6 +28,7 @@ import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.domain.player.GameStats;
 import com.wesleykerr.steam.domain.player.Player;
 import com.wesleykerr.steam.domain.player.Player.Builder;
+import com.wesleykerr.steam.persistence.Couchbase;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.dao.GenresDAO;
@@ -62,9 +63,7 @@ public class UpdatePlayers {
 		CounterDAO counter = new CounterDAOImpl();
 		queryDoc = new QueryDocument(counter);
 		info = new SteamAPI(queryDoc);
-
-		List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
-		client = new CouchbaseClient(hosts, "default", "");
+		client = Couchbase.connect("default");
 	}
 	
 	public void runBatch(String view, int batchSize) throws Exception { 
