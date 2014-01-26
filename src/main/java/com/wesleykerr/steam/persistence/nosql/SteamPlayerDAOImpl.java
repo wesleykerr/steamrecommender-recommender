@@ -1,5 +1,6 @@
 package com.wesleykerr.steam.persistence.nosql;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -16,7 +17,9 @@ import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
+import com.wesleykerr.steam.domain.player.GameStats;
 import com.wesleykerr.steam.domain.player.Player;
+import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.utils.GsonUtils;
 
@@ -64,5 +67,11 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             results.add(player);
         }
         return results;
+    }
+
+    @Override
+    public Iterator<Player> getPlayers(String tableName, int batchSize) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
