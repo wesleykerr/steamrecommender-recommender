@@ -20,6 +20,7 @@ import com.couchbase.client.CouchbaseClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.wesleykerr.steam.QueryDocument;
+import com.wesleykerr.steam.persistence.Couchbase;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.dao.PlayerURLsDAO;
@@ -238,8 +239,7 @@ public class GroupCollector {
         CouchbaseClient client = null;
         MySQL mySQL = null;
         try { 
-            List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
-            client = new CouchbaseClient(hosts, "default", "");
+            client = Couchbase.connect("default");
             SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(client);
             
             mySQL = MySQL.getDreamhost();

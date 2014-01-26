@@ -42,6 +42,7 @@ public class SteamAPITest {
     }
     
     @Test
+    @Ignore
     public void testPrivateFriendsList() { 
         long steamid = 76561198091316831L;
         

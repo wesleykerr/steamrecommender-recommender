@@ -1,10 +1,13 @@
 package com.wesleykerr.steam.persistence;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
 import net.spy.memcached.PersistTo;
 import net.spy.memcached.ReplicateTo;
@@ -21,7 +24,12 @@ import com.wesleykerr.utils.GsonUtils;
 public class Couchbase {
 
     public static CouchbaseClient connect(String bucket) throws IOException, URISyntaxException { 
-        List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
+        Properties prop = new Properties();
+        InputStream input = new FileInputStream("config/couchbase.properties");
+        prop.load(input);
+        
+        String uri = prop.getProperty("uri");
+        List<URI> hosts = Arrays.asList(new URI(uri));
         return new CouchbaseClient(hosts, bucket, "");
     }
     

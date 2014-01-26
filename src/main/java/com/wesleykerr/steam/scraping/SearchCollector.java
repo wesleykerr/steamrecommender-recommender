@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.couchbase.client.CouchbaseClient;
 import com.google.gson.JsonObject;
 import com.wesleykerr.steam.QueryDocument;
+import com.wesleykerr.steam.persistence.Couchbase;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
 import com.wesleykerr.utils.Utils;
@@ -34,10 +35,7 @@ public class SearchCollector {
         CounterDAO counter = new CounterDAOImpl();
         queryDocument = new QueryDocument(counter);
 
-//        List<URI> hosts = Arrays.asList(new URI("http://127.0.0.1:8091/pools"));
-        List<URI> hosts = Arrays.asList(new URI("http://192.168.0.8:8091/pools"));
-        client = new CouchbaseClient(hosts, "default", "");
-
+        client = Couchbase.connect("default");
         queryCount = 0;
     }
 
