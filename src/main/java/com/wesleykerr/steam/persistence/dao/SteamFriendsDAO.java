@@ -7,5 +7,5 @@ public interface SteamFriendsDAO {
     public boolean add(FriendsList friends);
     public void update(FriendsList friendsList);
     
-    public boolean exists(String key);
+    public boolean exists(long steamId);
 }

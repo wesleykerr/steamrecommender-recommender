@@ -1,6 +1,5 @@
 package com.wesleykerr.steam.persistence.nosql;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -17,9 +16,7 @@ import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
-import com.wesleykerr.steam.domain.player.GameStats;
 import com.wesleykerr.steam.domain.player.Player;
-import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.utils.GsonUtils;
 
@@ -30,9 +27,9 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     public SteamPlayerDAOImpl(CouchbaseClient client) { 
         this.client = client;
     }
-    
+
     @Override
-    public boolean add(long steamId) { 
+    public boolean addSteamId(long steamId) {
         Object o = client.get(String.valueOf(steamId));
         if (o == null) {
             JsonObject obj = new JsonObject();
@@ -44,11 +41,11 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
         }
         return false;
     }
-    
-    @Override 
-    public void update(String id, String document) { 
+
+    @Override
+    public void update(long steamId, int revision, boolean visible, long timestamp, String json) {
         try {
-            client.set(id, document).get();
+            client.set(String.valueOf(steamId), json).get();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
@@ -57,21 +54,45 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
 
     @Override
-    public List<Player> getSteamIdsWithNoFriends(int limit) { 
-        List<Player> results = Lists.newArrayList();
-        View v = client.getView("players", "missing_friends");
-        Query q = new Query().setReduce(false).setLimit(limit).setIncludeDocs(true);
-        ViewResponse response = client.query(v, q);
-        for (ViewRow row : response) { 
-            Player player = GsonUtils.getDefaultGson().fromJson(row.getValue(), Player.class);
-            results.add(player);
-        }
-        return results;
+    public void updatedFriends(long steamId, long timestamp, String json) {
+        // TODO Auto-generated method stub
+        
     }
 
     @Override
-    public Iterator<Player> getPlayers(String tableName, int batchSize) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<Player> getSteamIdsWithNoFriends(int limit) { 
+        return getPlayersFromView("missing_friends", limit);
+    }
+
+    @Override
+    public List<Player> getRefreshList(int limit) {
+        return getPlayersFromView("week_old_players", limit);
+    }
+
+    @Override
+    public List<Player> getNewPlayers(int limit) {
+        return getPlayersFromView("new_players", limit);
+    }
+    
+    private List<Player> getPlayersFromView(String view, int limit) { 
+        View v = client.getView("players", view);
+        LOGGER.info("view: " + view);
+        Query q = new Query().
+                setReduce(false).
+                setLimit(limit).
+                setIncludeDocs(true);
+        
+        List<Player> players = Lists.newArrayList();
+        ViewResponse response = client.query(v, q);
+        for (ViewRow row : response) { 
+            Player p = GsonUtils.getDefaultGson().fromJson((String) row.getDocument(), Player.class);
+            players.add(p);
+        }
+        return players;
+    }
+
+    @Override
+    public void close() {
+
     }
 }

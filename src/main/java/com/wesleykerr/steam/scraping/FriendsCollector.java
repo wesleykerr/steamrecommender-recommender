@@ -1,26 +1,25 @@
 package com.wesleykerr.steam.scraping;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.couchbase.client.CouchbaseClient;
 import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.domain.player.FriendsList;
 import com.wesleykerr.steam.domain.player.FriendsList.Relationship;
 import com.wesleykerr.steam.domain.player.Player;
 import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.steam.etl.SteamAPI;
-import com.wesleykerr.steam.persistence.Couchbase;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.dao.SteamFriendsDAO;
 import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
-import com.wesleykerr.steam.persistence.nosql.SteamFriendsDAOImpl;
-import com.wesleykerr.steam.persistence.nosql.SteamPlayerDAOImpl;
+import com.wesleykerr.steam.persistence.sql.SteamFriendsDAOImpl;
+import com.wesleykerr.steam.persistence.sql.SteamPlayerDAOImpl;
 import com.wesleykerr.utils.GsonUtils;
 import com.wesleykerr.utils.Utils;
 
@@ -75,17 +74,18 @@ public class FriendsCollector {
         for (Player player : steamIds) { 
             LOGGER.info("Player: " + player.getId());
             long steamId = Long.parseLong(player.getId());
+            long millis = System.currentTimeMillis();
             List<Relationship> friends = steamAPI.gatherFriends(steamId);
 
             Player updated = Builder.create()
                     .withPlayer(player)
-                    .withFriendsMillis(System.currentTimeMillis())
+                    .withFriendsMillis(millis)
                     .build();
             String updatedDocument = GsonUtils.getDefaultGson().toJson(updated);
-            steamPlayerDAO.update(updated.getId(), updatedDocument);
+            steamPlayerDAO.updatedFriends(steamId, millis, updatedDocument);
 //            LOGGER.info("Updated: " + updatedDocument);
 
-            if (steamFriendsDAO.exists(player.getId())) {
+            if (steamFriendsDAO.exists(steamId)) {
                 LOGGER.info("... " + player.getFriendsMillis());
                 continue;
             }
@@ -106,7 +106,7 @@ public class FriendsCollector {
                 }
                 
                 for (Relationship r : friends) { 
-                    boolean added = steamPlayerDAO.add(Long.parseLong(r.getSteamid()));
+                    boolean added = steamPlayerDAO.addSteamId(steamId);
                     operationsCounter.incrCounter();
                     if (added) 
                         playerCounterDAO.incrCounter();
@@ -122,15 +122,11 @@ public class FriendsCollector {
     }
     
     public static void main(String[] args) throws Exception { 
-        CouchbaseClient defaultClient = null;
-        CouchbaseClient friendsClient = null;
         MySQL mySQL = null;
         try { 
-            defaultClient = Couchbase.connect("default");
-            SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(defaultClient);
-
-            friendsClient = Couchbase.connect("friends");
-            SteamFriendsDAO steamFriendsDAO = new SteamFriendsDAOImpl(friendsClient);
+            Connection conn = mySQL.getConnection();
+            SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(conn);
+            SteamFriendsDAO steamFriendsDAO = new SteamFriendsDAOImpl(conn);
 
             FriendsCollector collector = new FriendsCollector(steamPlayerDAO, steamFriendsDAO);
             collector.run();
@@ -138,10 +134,6 @@ public class FriendsCollector {
         } finally { 
             if (mySQL != null)
                 mySQL.disconnect();
-            if (defaultClient != null) 
-                defaultClient.shutdown();
-            if (friendsClient != null) 
-                friendsClient.shutdown();
         }
     }
 }

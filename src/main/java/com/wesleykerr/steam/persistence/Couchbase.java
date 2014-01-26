@@ -46,7 +46,7 @@ public class Couchbase {
                     .withFriendsMillis(null)
                     .build();
             
-            client.set(updated.getId(), GsonUtils.getDefaultGson().toJson(updated), PersistTo.MASTER, ReplicateTo.ONE).get();
+//            client.set(updated.getId(), GsonUtils.getDefaultGson().toJson(updated), PersistTo.MASTER, ReplicateTo.ONE).get();
             System.out.println(updated.getFriendsMillis());
         }
 

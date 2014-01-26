@@ -39,7 +39,7 @@ public class SearchCollector {
         queryCount = 0;
     }
 
-        private String gatherSteamId(String playerURL) { 
+    private String gatherSteamId(String playerURL) { 
         try {
             Thread.currentThread().sleep(1500);
         } catch (Exception e) { 

@@ -20,12 +20,21 @@ public interface SteamPlayerDAO {
 	 * Update the steam id with the information
 	 * given.
 	 * @param steamId
-	 * @param visible
+	 * @param revision
+	 * @param isPrivate
 	 * @param timestamp - expected to be in UTC
 	 * @param document
 	 */
-	public void update(long steamId, boolean visible, long timestamp, String json);
-	
+	public void update(long steamId, int revision, boolean isPrivate, long timestamp, String json);
+
+	/**
+	 * update this record since we updated the friends.
+	 * @param steamId
+	 * @param timestamp
+	 * @param json
+	 */
+    public void updatedFriends(long steamId, long timestamp, String json);
+
 	/**
 	 * Get a list of players that need to be refreshed.
 	 * @param limit - the maximum number of players to return
@@ -50,10 +59,11 @@ public interface SteamPlayerDAO {
 	 * @return
 	 */
     public List<Player> getSteamIdsWithNoFriends(int limit);
-
-    public boolean add(long id);
-    public void update(String id, String document);
     
     
-    public Iterator<Player> getPlayers(String tableName, int batchSize);
+    /**
+     * We are finished with this DAO and close out anything you have 
+     * opened and left open for the life of the application.
+     */
+    public void close();
 }

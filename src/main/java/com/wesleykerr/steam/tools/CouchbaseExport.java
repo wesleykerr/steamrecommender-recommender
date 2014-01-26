@@ -19,7 +19,7 @@ import com.wesleykerr.steam.persistence.Couchbase;
 public class CouchbaseExport {
     private static final Logger LOGGER = Logger.getLogger(CouchbaseExport.class);
 
-    public void run(String bucket, String viewName, File outputFile) throws Exception { 
+    public static void run(String bucket, String viewName, File outputFile) throws Exception { 
         CouchbaseClient client = Couchbase.connect(bucket);
         
         int count = 0;
@@ -38,6 +38,9 @@ public class CouchbaseExport {
                 ++count;
                 if (count % 10000 == 0)
                     LOGGER.info("processed " + count + " players");
+                
+                if (count > 100)
+                    break;
             }
         } 
         
@@ -45,14 +48,9 @@ public class CouchbaseExport {
         client.shutdown();
     }
     
-    public static void exportTraining() throws Exception { 
-        CouchbaseExport export = new CouchbaseExport();
-        export.run("default", "active_players", new File("/tmp/training-data.gz"));
-    }
-    
     public static void main(String[] args) throws Exception { 
-        exportTraining();
-//        export.run("default", "all_keys", new File("/tmp/players.gz"));
+//        run("default", "active_players", new File("/tmp/training-data.gz"));
+        run("default", "all_keys", new File("/tmp/players.gz"));
 //        export.run("friends", "all_keys", new File("/tmp/friends.gz"));
     }
 }

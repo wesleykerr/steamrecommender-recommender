@@ -41,8 +41,8 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     }
     
     @Override
-    public boolean exists(String key) { 
-        return client.get(key) != null;
+    public boolean exists(long key) { 
+        return client.get(String.valueOf(key)) != null;
     }
     
     private void update(String key, String value) { 
