@@ -54,8 +54,11 @@ public class UpdatePlayers {
 	public void runBatch(List<Player> players, SteamPlayerDAO playerDAO) throws Exception { 
         BufferedWriter out = new BufferedWriter(new FileWriter("/data/steam/player-updates", true));
         for (Player p : players) { 
+            int revision = Integer.parseInt(p.getRev())+1;
+
             List<GameStats> list = info.gatherOwnedGames(Long.parseLong(p.getId()), genreMap);
             Builder builder = Builder.create()
+                    .withRev(String.valueOf(revision))
                     .withPlayer(p)
                     .withGames(list)
                     .isVisible(list.size() > 0)
@@ -64,7 +67,7 @@ public class UpdatePlayers {
             LOGGER.info("query player " + updated.getId());
             
             String updatedDocument = GsonUtils.getDefaultGson().toJson(updated);
-//            playerDAO.update(Long.parseLong(p.getId()), p.isVisible(), millis, updatedDocument);
+            playerDAO.update(Long.parseLong(p.getId()), revision, !p.isVisible(), millis, updatedDocument);
             out.write(updatedDocument);
             out.write("\n");
             Thread.currentThread().sleep(1500);

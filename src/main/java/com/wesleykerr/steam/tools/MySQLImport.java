@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.util.zip.GZIPInputStream;
 
 import com.wesleykerr.steam.domain.player.Player;
+import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.steam.persistence.sql.SteamPlayerDAOImpl;
@@ -28,9 +29,37 @@ public class MySQLImport {
             for (int i = 0; input.ready() && i < 100; ++i) { 
                 String json = input.readLine();
                 Player p = GsonUtils.getDefaultGson().fromJson(json, Player.class);
-
+                
+                int revision = 1;
+                try { 
+                    revision = Integer.parseInt(p.getRev());
+                } catch (NumberFormatException nfe) { 
+                    // do nothing;
+                }
+                
+                boolean isPrivate = !p.isVisible();
+                if (p.getGames() != null && p.getGames().size() > 0) {
+                    p = Builder.create().withPlayer(p).isVisible(true).build();
+                    json = GsonUtils.getDefaultGson().toJson(p);
+                    isPrivate = false;                
+                }
+                
+                if (p.getUpdateDateTime() != null && p.getUpdateDateTime() == 0L) { 
+                    p = Builder.create().withPlayer(p).withUpdateDateTime(null).build();
+                    json = GsonUtils.getDefaultGson().toJson(p);
+                }
+                
+                if (p.getUpdateDateTime() == null && (p.getGames() == null || p.getGames().isEmpty())) {
+                    json = null;
+                    revision = 0;
+                }
+                
+                System.out.println(" " + json);
                 long steamId = Long.parseLong(p.getId());
-                playerDAO.update(steamId, 1, !p.isVisible(), p.getUpdateDateTime(), json);
+                playerDAO.addSteamId(steamId);
+                playerDAO.update(steamId, revision, isPrivate, p.getUpdateDateTime(), json);
+                
+                if (true) break;
             }
         }
         

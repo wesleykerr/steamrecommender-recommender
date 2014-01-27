@@ -46,12 +46,12 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
 
     @Override
-    public void update(long steamId, int revision, boolean isPrivate, long timestamp, String json) {
+    public void update(long steamId, int revision, boolean isPrivate, Long timestamp, String json) {
         internalUpdate(steamId, revision, isPrivate, timestamp, json, false);
     }
     
     @Override
-    public void updatedFriends(long steamId, long timestamp, String json) {
+    public void updatedFriends(long steamId, Long timestamp, String json) {
         try { 
             if (updateFriendsPS == null)  
                 updateFriendsPS = conn.prepareStatement(UPDATE_FRIENDS);
@@ -67,16 +67,24 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
     
     private void internalUpdate(long steamId, int revision, boolean isPrivate, 
-            long timestamp, String json, boolean added) {
+            Long timestamp, String json, boolean added) {
         try { 
             if (updatePS == null)  
                 updatePS = conn.prepareStatement(UPDATE);
             
             updatePS.setInt(1, revision);
-            updatePS.setTimestamp(2, new Timestamp(timestamp));
-            updatePS.setString(3, json);
-            updatePS.setBoolean(4, isPrivate);
+            if (json != null) 
+                updatePS.setString(2, json);
+            else 
+                updatePS.setNull(2, java.sql.Types.LONGVARCHAR);
+            
+            updatePS.setBoolean(3, isPrivate);
+            if (timestamp != null) 
+                updatePS.setTimestamp(4, new Timestamp(timestamp));
+            else
+                updatePS.setNull(4, java.sql.Types.TIMESTAMP);
             updatePS.setLong(5, steamId);
+            
             int affected = updatePS.executeUpdate();
         } catch (Exception e) {
             LOGGER.error("Unable to add " + steamId, e);
@@ -157,9 +165,9 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             " VALUES (?, 0); ";
     
     public static final String UPDATE = 
-            "INSERT steam_data.players SET revision = ?, "
-            + "modify_datetime = ?, content = ?, "
-            + "private = ? WHERE steamid = ?;";
+            "UPDATE steam_data.players SET revision = ?, content = ?, "
+            + "private = ?, last_updated = ? "
+            + "WHERE steamid = ?";
     
     public static final String UPDATE_FRIENDS = 
             "UPDATE steam_data.players "
