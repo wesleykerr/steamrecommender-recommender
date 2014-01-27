@@ -43,7 +43,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
 
     @Override
-    public void update(long steamId, int revision, boolean visible, long timestamp, String json) {
+    public void update(long steamId, int revision, boolean visible, Long timestamp, String json) {
         try {
             client.set(String.valueOf(steamId), json).get();
         } catch (InterruptedException e) {
@@ -54,7 +54,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
 
     @Override
-    public void updatedFriends(long steamId, long timestamp, String json) {
+    public void updatedFriends(long steamId, Long timestamp, String json) {
         // TODO Auto-generated method stub
         
     }

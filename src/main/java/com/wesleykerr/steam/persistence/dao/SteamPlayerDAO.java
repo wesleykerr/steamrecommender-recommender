@@ -25,7 +25,7 @@ public interface SteamPlayerDAO {
 	 * @param timestamp - expected to be in UTC
 	 * @param document
 	 */
-	public void update(long steamId, int revision, boolean isPrivate, long timestamp, String json);
+	public void update(long steamId, int revision, boolean isPrivate, Long timestamp, String json);
 
 	/**
 	 * update this record since we updated the friends.
@@ -33,7 +33,7 @@ public interface SteamPlayerDAO {
 	 * @param timestamp
 	 * @param json
 	 */
-    public void updatedFriends(long steamId, long timestamp, String json);
+    public void updatedFriends(long steamId, Long timestamp, String json);
 
 	/**
 	 * Get a list of players that need to be refreshed.
