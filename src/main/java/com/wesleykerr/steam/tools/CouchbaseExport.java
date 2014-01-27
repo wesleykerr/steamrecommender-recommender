@@ -7,6 +7,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.zip.GZIPOutputStream;
 
+import net.spy.memcached.OperationTimeoutException;
+
 import org.apache.log4j.Logger;
 
 import com.couchbase.client.CouchbaseClient;
@@ -27,21 +29,30 @@ public class CouchbaseExport {
                 Writer writer = new OutputStreamWriter(gzipOutputStream, "UTF-8");
                 BufferedWriter output = new BufferedWriter(writer)) { 
 
-            View v = client.getView("players", viewName);
-            Query q = new Query().setReduce(false);
-            ViewResponse response = client.query(v, q);
-            for (ViewRow row : response) { 
-                Object obj = client.get(row.getKey());
-                output.write(obj.toString());
-                output.write("\n");
-                
-                ++count;
-                if (count % 10000 == 0)
-                    LOGGER.info("processed " + count + " players");
-                
-                if (count > 100)
-                    break;
-            }
+        	View v = client.getView("players", viewName);
+
+        	Query countQuery = new Query().setReduce(true).setIncludeDocs(false);
+        	ViewResponse countResponse = client.query(v, countQuery);
+        	long total = Long.parseLong(countResponse.iterator().next().getValue());
+
+        	int batchSize = 5000;
+        	for (int start = 0; start < total; start += batchSize) { 
+                Query q = (new Query())
+                		.setLimit(batchSize)
+                		.setSkip(start)
+                		.setReduce(false)
+                		.setIncludeDocs(true);
+
+                ViewResponse response = client.query(v, q);
+                for (ViewRow row : response) { 
+                	output.write(row.getDocument().toString());
+                	output.write("\n");
+                    
+                    ++count;
+                    if (count % 10000 == 0)
+                        LOGGER.info("processed " + count + " players");
+                }
+        	}
         } 
         
         LOGGER.info("processed " + count + " players");
@@ -50,7 +61,7 @@ public class CouchbaseExport {
     
     public static void main(String[] args) throws Exception { 
 //        run("default", "active_players", new File("/tmp/training-data.gz"));
-        run("default", "all_keys", new File("/tmp/players.gz"));
-//        export.run("friends", "all_keys", new File("/tmp/friends.gz"));
+//        run("default", "all_keys", new File("/tmp/players.gz"));
+//        run("friends", "all_keys", new File("/tmp/friends.gz"));
     }
 }
