@@ -1,7 +1,7 @@
 --liquibase formatted sql
 
 --changeset wkerr:1
-create table players (
+create table steam_data.players (
     steamid bigint(20) not null primary key,
     revision int(11),
     num_games int(11),
@@ -11,7 +11,16 @@ create table players (
     content longtext 
 );
 
-create table friends (
+alter table steam_data.players 
+add index refresh_idx (private ASC, last_updated ASC) ;
+
+alter table steam_data.players 
+add index new_players_idx (last_updated ASC) ;
+
+alter table steam_data.players 
+add index new_friends_idx (last_updated_friends ASC) ;
+
+create table steam_data.friends (
     steamid bigint(20) not null primary key,
     revision int(11),
     num_friends int(11),
