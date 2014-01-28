@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.wesleykerr.steam.domain.player.PlayerDeprecated;
+import com.wesleykerr.steam.domain.player.Player;
 
 public class RecentData extends Configured implements Tool {
 	private static final Gson gson = new Gson();
@@ -34,9 +34,9 @@ public class RecentData extends Configured implements Tool {
 		public void map(LongWritable key, Text value, Context context) 
 				throws IOException, InterruptedException { 
 			try { 
-				PlayerDeprecated p = gson.fromJson((String) value.toString(), PlayerDeprecated.class);
-				if (p.isVisible() && !p.getGames().isEmpty()) 
-					context.write(new Text(p.getId()), value);
+				Player p = gson.fromJson((String) value.toString(), Player.class);
+				if (!p.isPrivate() && !p.getGames().isEmpty()) 
+					context.write(new Text(String.valueOf(p.getSteamId())), value);
 			} catch (JsonSyntaxException e) { 
 				LOGGER.error("malformed json: " + value.toString());
 			} catch (NumberFormatException nfe) {
@@ -53,9 +53,9 @@ public class RecentData extends Configured implements Tool {
 			String json = null;
 			
 			for (Text value : values) { 
-				PlayerDeprecated p = gson.fromJson((String) value.toString(), PlayerDeprecated.class);
-				if (p.getUpdateDateTime() > maxTime) {
-					maxTime = p.getUpdateDateTime();
+				Player p = gson.fromJson((String) value.toString(), Player.class);
+				if (p.getLastUpdated() > maxTime) {
+					maxTime = p.getLastUpdated();
 					json = value.toString();
 				}
 			}

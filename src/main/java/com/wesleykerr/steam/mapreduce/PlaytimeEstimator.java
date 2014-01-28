@@ -1,10 +1,8 @@
 package com.wesleykerr.steam.mapreduce;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
@@ -12,7 +10,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -24,12 +21,10 @@ import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.wesleykerr.steam.domain.player.GameStats;
-import com.wesleykerr.steam.domain.player.PlayerDeprecated;
+import com.wesleykerr.steam.domain.player.Player;
 
 /**
  * Estimates the 25% and 75% quantiles of each app so that
@@ -59,7 +54,7 @@ public class PlaytimeEstimator extends Configured implements Tool {
             try { 
                 LOGGER.info("KEY: " + key);
                 String classValue = value.toString().split("\t")[1];
-                PlayerDeprecated p = gson.fromJson(classValue.toString(), PlayerDeprecated.class);
+                Player p = gson.fromJson(classValue.toString(), Player.class);
                 for (GameStats stats : p.getGames()) {
                     context.getCounter("Estimator", PlaytimeEstimatorMapper.class.getSimpleName()).increment(1);
                     if (stats.getCompletePlaytime() > 0) { 
