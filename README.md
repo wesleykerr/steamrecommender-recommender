@@ -10,7 +10,15 @@ link in /usr/local/game-recommender to point to the new release found in
 
     /repo/releases/com/wesleykerr/steam/recommender/<version>/recommender-<version>.jar
 
+On Server Restart
+======
 
+I may change this to automount bitcasa on every run of backups just to avoid worrying about this
+in the future.
+
+    sudo mount -tbitcasa wesley.n.kerr@gmail.com /home/wkerr/bitcasa -o password=<bitcasa password>
+    nohup /usr/local/bin/taskforest --config_file=/usr/local/taskforest/config/taskforest.cfg &
+    nohup /usr/local/bin/taskforestd --config_file=/usr/local/taskforest/config/taskforestd.cfg &
 
 Gathering Steam Players
 ======
