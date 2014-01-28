@@ -51,7 +51,7 @@ public class UpdatePlayers {
 	}
 	
 	public void runBatch(List<Player> players, SteamPlayerDAO playerDAO) throws Exception { 
-        BufferedWriter out = new BufferedWriter(new FileWriter("/data/steam/player-updates", true));
+//        BufferedWriter out = new BufferedWriter(new FileWriter("/data/steam/player-updates", true));
         for (Player p : players) { 
             List<GameStats> list = info.gatherOwnedGames(p.getSteamId(), genreMap);
             Builder builder = Builder.create()
@@ -64,12 +64,12 @@ public class UpdatePlayers {
             LOGGER.info("query player " + updated.getSteamId());
             
             playerDAO.update(updated);
-            out.write(GsonUtils.getDefaultGson().toJson(updated));
-            out.write("\n");
-            Thread.currentThread().sleep(1500);
+//            out.write(GsonUtils.getDefaultGson().toJson(updated));
+//            out.write("\n");
+//            Thread.currentThread().sleep(1500);
             
         }
-        out.close();
+//        out.close();
 	}
 
 	public void run(String viewName) throws Exception { 
@@ -125,7 +125,6 @@ public class UpdatePlayers {
 		Properties prop = new Properties();
 		// TODO make this a parameter that is passed in.
 		InputStream input = new FileInputStream("config/recommender.properties");
-		LOGGER.info("Input: " + input);
 		prop.load(input);
 		System.setProperty("steam.key", prop.getProperty("steamKey"));
 

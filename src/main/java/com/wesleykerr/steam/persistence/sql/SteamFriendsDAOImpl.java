@@ -36,7 +36,10 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
                     insertPS = conn.prepareStatement(INSERT);
 
                 insertPS.setLong(1, friendsList.getSteamId());
-                insertPS.setInt(2, friendsList.getNumFriends());
+                if (friendsList.getNumFriends() == null)
+                    insertPS.setNull(2, java.sql.Types.INTEGER);
+                else
+                    insertPS.setInt(2, friendsList.getNumFriends());
                 insertPS.setTimestamp(3, new Timestamp(friendsList.getLastUpdated()));
                 insertPS.setString(4, GsonUtils.getDefaultGson().toJson(friendsList));
                 insertPS.executeUpdate();

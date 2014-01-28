@@ -39,11 +39,11 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             
             insertPS.setLong(1, steamId);
             insertPS.executeUpdate();
+            return true;
         } catch (Exception e) {
-            LOGGER.error("Unable to add " + steamId, e);
-            throw new RuntimeException(e);
+            LOGGER.error("Unable to add " + steamId);
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -54,7 +54,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             
             updatePS.setInt(1, p.getRevision());
             
-            if (p.getGames() == null)
+            if (p.getNumGames() == null)
                 updatePS.setNull(2, java.sql.Types.INTEGER);
             else
                 updatePS.setInt(2, p.getNumGames());
@@ -85,47 +85,34 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     
     @Override
     public List<Player> getRefreshList(int limit) {
-        List<Player> players = Lists.newArrayList();
-        
         String query = SELECT_REFRESH + " LIMIT " + limit;
-        try (Statement s = conn.createStatement();
-                ResultSet rs = s.executeQuery(query)) {
-
-            String json = rs.getString("content");
-            Player p = GsonUtils.getDefaultGson().fromJson(json, Player.class);
-
-            players.add(p);
-            
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        return players;
+        return getPlayers(query);
     }
 
     @Override
     public List<Player> getNewPlayers(int limit) {
         String query = SELECT_NEW + " LIMIT " + limit;
-        return getSteamIds(query);
+        return getPlayers(query);
     }
 
     @Override
     public List<Player> getSteamIdsWithNoFriends(int limit) { 
         String query = SELECT_FRIENDS + " LIMIT " + limit;
-        return getSteamIds(query);
+        return getPlayers(query);
     }
     
-    private List<Player> getSteamIds(String query) { 
+    private List<Player> getPlayers(String query) { 
         List<Player> players = Lists.newArrayList();
         
+        LOGGER.info("Executing query " + query);
         try (Statement s = conn.createStatement();
                 ResultSet rs = s.executeQuery(query)) { 
             
-            long steamId = rs.getLong("steamid");
-            Player.Builder builder = Builder.create().withSteamId(steamId);
-            
-            players.add(builder.build());
-            
+            while (rs.next()) { 
+                String json = rs.getString("content");
+                Player p = GsonUtils.getDefaultGson().fromJson(json, Player.class);
+                players.add(p);
+            }  
         } catch (SQLException e) { 
             throw new RuntimeException(e);
         }
@@ -162,16 +149,16 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
 
     public static final String SELECT_REFRESH = 
             "SELECT content FROM steam_data.players "
-            + "WHERE private = 0 "
-            + "AND last_updated <= date_sub(CURRENT_TIMESTAMP, DAY, 7) ";
+            + "WHERE (private is NULL OR private = 0) "
+            + "AND last_updated <= date_sub(CURRENT_TIMESTAMP, INTERVAL 7 DAY) ";
     
     public static final String SELECT_NEW = 
-            "SELECT steamid FROM steam_data.players "
-            + "WHERE last_updated = NULL";
+            "SELECT content FROM steam_data.players "
+            + "WHERE last_updated is NULL";
     
     public static final String SELECT_FRIENDS = 
-            "SELECT steamid FROM steam_data.players "
-            + "WHERE last_updated_friends = NULL";
+            "SELECT content FROM steam_data.players "
+            + "WHERE last_updated_friends is NULL";
 
 
 }

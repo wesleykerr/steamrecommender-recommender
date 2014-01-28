@@ -25,8 +25,8 @@ import com.wesleykerr.utils.Utils;
 public class FriendsCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(FriendsCollector.class);
 
-    private static final int NUM_BATCHES = 10;
-    private static final int BATCH_SIZE = 100;
+    private static final int NUM_BATCHES = 1;
+    private static final int BATCH_SIZE = 3;
 
     private QueryDocument queryDocument;
 
@@ -100,7 +100,7 @@ public class FriendsCollector {
                 }
                 
                 for (Relationship r : friends) { 
-                    boolean added = steamPlayerDAO.addSteamId(player.getSteamId());
+                    boolean added = steamPlayerDAO.addSteamId(Long.parseLong(r.getSteamid()));
                     operationsCounter.incrCounter();
                     if (added) 
                         playerCounterDAO.incrCounter();
@@ -116,7 +116,7 @@ public class FriendsCollector {
     }
     
     public static void main(String[] args) throws Exception { 
-        MySQL mySQL = null;
+        MySQL mySQL = MySQL.getDreamhost();
         try { 
             Connection conn = mySQL.getConnection();
             SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(conn);

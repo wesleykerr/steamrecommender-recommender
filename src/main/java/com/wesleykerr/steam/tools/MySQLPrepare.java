@@ -17,6 +17,7 @@ import java.util.zip.GZIPInputStream;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.annotations.SerializedName;
 import com.wesleykerr.steam.domain.player.FriendsList;
@@ -29,9 +30,7 @@ public class MySQLPrepare {
     private static final Logger LOGGER = Logger.getLogger(MySQLPrepare.class);
     
     private Map<String,Integer> map;
-    
-    
-    
+
     public String formatLine(String line) { 
         PlayerDeprecated p = GsonUtils.getDefaultGson().fromJson(line, PlayerDeprecated.class);
         Player.Builder builder = Player.Builder.create();
@@ -39,8 +38,14 @@ public class MySQLPrepare {
         if (p.getRev() != null)
             builder.withRevision(Integer.parseInt(p.getRev()));
         else 
-            builder.withRevision(0);
-        builder.withGames(p.getGames());
+            builder.withRevision(1);
+        
+        if (p.getGames() != null) { 
+            List<GameStats> games = Lists.newArrayList(p.getGames());
+            for (GameStats game : games) 
+                game.setGenres(null);
+            builder.withGames(games);
+        }
         builder.withLastUpdated(p.getUpdateDateTime());
         builder.withLastUpdatedFriends(p.getFriendsMillis());
         builder.isPrivate(false);
@@ -59,13 +64,14 @@ public class MySQLPrepare {
             builder.withLastUpdated(System.currentTimeMillis());
             map.put("magic-games", map.get("magic-games")+1);
         }
-
+        
         Player newPlayer = builder.build();
         DateFormat formatter = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
 
         StringBuffer buf = new StringBuffer();
         buf.append(newPlayer.getSteamId()).append(",");  
         buf.append(newPlayer.getRevision()).append(",");
+        buf.append(Objects.firstNonNull(newPlayer.getNumGames(), "NULL")).append(",");
         buf.append(Objects.firstNonNull(newPlayer.isPrivate(), "NULL")).append(",");
 
         String lastUpdated = "NULL";
@@ -106,7 +112,6 @@ public class MySQLPrepare {
         LOGGER.info("Finished inserting " + records + " records");
         LOGGER.info("...Zero Date: " + map.get("zero-date"));
         LOGGER.info("...Not Private: " + map.get("not-private"));
-        LOGGER.info("...Fixed Revision: " + map.get("revision-0"));
         LOGGER.info("...Magic Games: " + map.get("magic-games"));
     }
     

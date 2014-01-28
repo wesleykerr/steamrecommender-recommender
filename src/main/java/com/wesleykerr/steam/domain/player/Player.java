@@ -106,8 +106,10 @@ public class Player {
 	    }
 	    
 	    public Builder withGames(List<GameStats> games) { 
-	        player.games = Lists.newArrayList(games);
-	        player.numGames = games.size();
+	        if (games != null) {
+	            player.games = Lists.newArrayList(games);
+	            player.numGames = games.size();
+	        }
 	        return this;
 	    }
 	    
