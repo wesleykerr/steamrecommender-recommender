@@ -13,8 +13,8 @@ public class FriendsListTest {
     @Test 
     public void testSerialization() { 
         JsonObject obj = new JsonObject();
-        obj.addProperty("_id", "1234");
-        obj.addProperty("_rev", "1");
+        obj.addProperty("steamId", 1234L);
+        obj.addProperty("revision", 1);
 
         JsonArray array = new JsonArray();
         JsonObject obj1 = new JsonObject();
@@ -30,7 +30,8 @@ public class FriendsListTest {
         array.add(obj2);
         
         obj.add("friendsList", array);
-        obj.addProperty("updateDateTime", 0L);
+        obj.addProperty("numFriends", 2);
+        obj.addProperty("lastUpdated", 0L);
         
         System.out.println(obj.toString());
         

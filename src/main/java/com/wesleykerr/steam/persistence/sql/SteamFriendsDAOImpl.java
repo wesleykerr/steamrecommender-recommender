@@ -27,8 +27,7 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     
     @Override
     public boolean add(FriendsList friendsList) { 
-        long steamId = Long.parseLong(friendsList.getId());
-        if (exists(steamId)) {
+        if (exists(friendsList.getSteamId())) {
             update(friendsList);
             return false;
         } else { 
@@ -36,9 +35,10 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
                 if (insertPS == null)
                     insertPS = conn.prepareStatement(INSERT);
 
-                insertPS.setLong(1, steamId);
-                insertPS.setString(2, GsonUtils.getDefaultGson().toJson(friendsList));
-                insertPS.setTimestamp(3, new Timestamp(friendsList.getUpdateDateTime()));
+                insertPS.setLong(1, friendsList.getSteamId());
+                insertPS.setInt(2, friendsList.getNumFriends());
+                insertPS.setTimestamp(3, new Timestamp(friendsList.getLastUpdated()));
+                insertPS.setString(4, GsonUtils.getDefaultGson().toJson(friendsList));
                 insertPS.executeUpdate();
                 
                 return true;
@@ -50,15 +50,16 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     
     @Override 
     public void update(FriendsList friendsList) { 
-        long steamId = Long.parseLong(friendsList.getId());
-        if (exists(steamId)) {
+        
+        if (exists(friendsList.getSteamId())) {
             try { 
                 if (updatePS == null)
                     updatePS = conn.prepareStatement(UPDATE);
 
                 updatePS.setString(1, GsonUtils.getDefaultGson().toJson(friendsList));
-                updatePS.setTimestamp(2, new Timestamp(friendsList.getUpdateDateTime()));
-                updatePS.setLong(3, steamId);
+                updatePS.setTimestamp(2, new Timestamp(friendsList.getLastUpdated()));
+                updatePS.setInt(3, friendsList.getNumFriends());
+                updatePS.setLong(4, friendsList.getSteamId());
                 updatePS.executeUpdate();
             } catch (SQLException e) { 
                 throw new RuntimeException(e);
@@ -87,14 +88,13 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     
     private static final String INSERT = 
             "INSERT INTO steam_data.friends "
-            + "(steamid, revision, content, last_updated) "
-            + "VALUES (?, 1, ?, ?) ";
+            + "(steamid, revision, num_friends, last_updated, content) "
+            + "VALUES (?, 1, ?, ?, ?) ";
     
     private static final String UPDATE = 
             "UPDATE steam_data.friends "
-            + "SET content = ?, "
-            + "revision = revision+1, "
-            + "last_updated = ? "
+            + "SET content = ?, revision = revision+1, "
+            + "num_friends = ?, last_updated = ? "
             + "WHERE steamid = ?";
     
     private static final String SELECT = 

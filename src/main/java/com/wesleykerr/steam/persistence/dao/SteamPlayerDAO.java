@@ -2,7 +2,6 @@ package com.wesleykerr.steam.persistence.dao;
 
 import java.util.List;
 
-import com.wesleykerr.steam.domain.player.FriendsList;
 import com.wesleykerr.steam.domain.player.Player;
 
 public interface SteamPlayerDAO {

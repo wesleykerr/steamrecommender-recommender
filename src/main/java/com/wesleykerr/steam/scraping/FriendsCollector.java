@@ -89,9 +89,9 @@ public class FriendsCollector {
             // be eventually persisted with this model when we update the player's games
             if (friends != null) { 
                 FriendsList friendsList = FriendsList.Builder.create()
-                        .withId(String.valueOf(player.getSteamId()))
+                        .withSteamId(player.getSteamId())
                         .withFriends(friends)
-                        .withUpdateDateTime(System.currentTimeMillis())
+                        .withLastUpdated(System.currentTimeMillis())
                         .build();
                 
                 boolean newFriends = steamFriendsDAO.add(friendsList);

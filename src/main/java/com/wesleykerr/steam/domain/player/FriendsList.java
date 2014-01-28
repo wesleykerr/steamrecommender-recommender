@@ -9,30 +9,30 @@ import com.wesleykerr.utils.GsonUtils;
 
 public class FriendsList {
 
-    @SerializedName("_id")
-    private String id;
-    @SerializedName("_rev")
-    private String rev;
+    private Long steamId;
+    private Integer revision;
 
     private List<Relationship> friendsList;
-    private Long updateDateTime;
+    private Integer numFriends;
+    
+    private Long lastUpdated;
     
     public FriendsList() { 
         
     }
 
     /**
-     * @return the id
+     * @return the steamId
      */
-    public String getId() {
-        return id;
+    public Long getSteamId() {
+        return steamId;
     }
 
     /**
      * @return the rev
      */
-    public String getRev() {
-        return rev;
+    public Integer getRevision() {
+        return revision;
     }
 
     /**
@@ -43,10 +43,17 @@ public class FriendsList {
     }
 
     /**
+     * @return the numFriends
+     */
+    public Integer getNumFriends() { 
+        return numFriends;
+    }
+    
+    /**
      * @return the updateDateTime
      */
-    public long getUpdateDateTime() {
-        return updateDateTime;
+    public Long getLastUpdated() {
+        return lastUpdated;
     }
 
     public static class Relationship {
@@ -96,13 +103,13 @@ public class FriendsList {
             friendsList = new FriendsList();
         }
         
-        public Builder withId(String id) {
-            friendsList.id = id;
+        public Builder withSteamId(Long steamId) {
+            friendsList.steamId = steamId;
             return this;
         }
         
-        public Builder withRev(String rev) { 
-            friendsList.rev = rev;
+        public Builder withRevision(Integer revision) { 
+            friendsList.revision = revision;
             return this;
         }
         
@@ -111,8 +118,8 @@ public class FriendsList {
             return this;
         }
         
-        public Builder withUpdateDateTime(long updateDateTime) { 
-            friendsList.updateDateTime = updateDateTime;
+        public Builder withLastUpdated(Long lastUpdated) { 
+            friendsList.lastUpdated = lastUpdated;
             return this;
         }
 

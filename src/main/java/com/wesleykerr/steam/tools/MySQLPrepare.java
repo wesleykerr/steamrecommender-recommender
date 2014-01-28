@@ -20,6 +20,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import com.google.gson.annotations.SerializedName;
 import com.wesleykerr.steam.domain.player.FriendsList;
+import com.wesleykerr.steam.domain.player.FriendsList.Relationship;
 import com.wesleykerr.steam.domain.player.GameStats;
 import com.wesleykerr.steam.domain.player.Player;
 import com.wesleykerr.utils.GsonUtils;
@@ -120,20 +121,22 @@ public class MySQLPrepare {
 
             while (input.ready()) { 
                 String line = input.readLine();
-                FriendsList list = GsonUtils.getDefaultGson().fromJson(line, FriendsList.class);
+                FriendsListDeprecated list = GsonUtils.getDefaultGson().fromJson(line, FriendsListDeprecated.class);
+                FriendsList.Builder builder = FriendsList.Builder.create();
+                builder.withSteamId(Long.parseLong(list.getId()));
+                builder.withFriends(list.getFriendsList());
+                builder.withLastUpdated(list.getUpdateDateTime());
+                builder.withRevision(Integer.parseInt(list.getRev()));
+                FriendsList fl = builder.build();
 
                 StringBuffer buf = new StringBuffer();
-                buf.append(list.getId()).append(",");
+                buf.append(fl.getSteamId()).append(",");
+                buf.append(fl.getRevision()).append(",");
 
-                String revision = list.getRev();
-                if (revision == null)
-                    revision = "1";
-                buf.append(revision).append(",");
-                buf.append("\'").append(line).append("\'").append(",");
+                Date date = new Date(fl.getLastUpdated());
+                buf.append(formatter.format(date)).append(",");
 
-                Date date = new Date(list.getUpdateDateTime());
-                buf.append(formatter.format(date)).append("\n");
-
+                buf.append("\'").append(GsonUtils.getDefaultGson().toJson(fl)).append("\'").append("\n");
                 output.write(buf.toString());
             }
         }
@@ -211,6 +214,49 @@ public class MySQLPrepare {
          */
         public boolean isVisible() {
             return visible;
+        }
+    }
+    
+    class FriendsListDeprecated {
+
+        @SerializedName("_id")
+        private String id;
+        @SerializedName("_rev")
+        private String rev;
+
+        private List<Relationship> friendsList;
+        private Long updateDateTime;
+        
+        public FriendsListDeprecated() { 
+            
+        }
+
+        /**
+         * @return the id
+         */
+        public String getId() {
+            return id;
+        }
+
+        /**
+         * @return the rev
+         */
+        public String getRev() {
+            return rev;
+        }
+
+        /**
+         * @return the friendsList
+         */
+        public List<Relationship> getFriendsList() {
+            return friendsList;
+        }
+
+        /**
+         * @return the updateDateTime
+         */
+        public long getUpdateDateTime() {
+            return updateDateTime;
         }
     }
     

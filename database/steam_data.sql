@@ -11,3 +11,11 @@ create table players (
     content longtext 
 );
 
+create table friends (
+    steamid bigint(20) not null primary key,
+    revision int(11),
+    num_friends int(11),
+    last_updated datetime,
+    content longtext
+);
+
