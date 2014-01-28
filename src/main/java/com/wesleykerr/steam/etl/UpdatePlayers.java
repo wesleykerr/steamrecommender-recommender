@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
-import java.sql.Connection;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
@@ -54,21 +53,18 @@ public class UpdatePlayers {
 	public void runBatch(List<Player> players, SteamPlayerDAO playerDAO) throws Exception { 
         BufferedWriter out = new BufferedWriter(new FileWriter("/data/steam/player-updates", true));
         for (Player p : players) { 
-            int revision = Integer.parseInt(p.getRev())+1;
-
-            List<GameStats> list = info.gatherOwnedGames(Long.parseLong(p.getId()), genreMap);
+            List<GameStats> list = info.gatherOwnedGames(p.getSteamId(), genreMap);
             Builder builder = Builder.create()
-                    .withRev(String.valueOf(revision))
+                    .withRevision(p.getRevision()+1)
                     .withPlayer(p)
                     .withGames(list)
-                    .isVisible(list.size() > 0)
-                    .withUpdateDateTime(millis);
+                    .isPrivate(list == null)
+                    .withLastUpdated(millis);
             Player updated = builder.build();
-            LOGGER.info("query player " + updated.getId());
+            LOGGER.info("query player " + updated.getSteamId());
             
-            String updatedDocument = GsonUtils.getDefaultGson().toJson(updated);
-            playerDAO.update(Long.parseLong(p.getId()), revision, !p.isVisible(), millis, updatedDocument);
-            out.write(updatedDocument);
+            playerDAO.update(updated);
+            out.write(GsonUtils.getDefaultGson().toJson(updated));
             out.write("\n");
             Thread.currentThread().sleep(1500);
             

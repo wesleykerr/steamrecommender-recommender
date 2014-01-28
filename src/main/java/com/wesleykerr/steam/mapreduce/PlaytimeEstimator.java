@@ -29,7 +29,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.wesleykerr.steam.domain.player.GameStats;
-import com.wesleykerr.steam.domain.player.Player;
+import com.wesleykerr.steam.domain.player.PlayerDeprecated;
 
 /**
  * Estimates the 25% and 75% quantiles of each app so that
@@ -59,7 +59,7 @@ public class PlaytimeEstimator extends Configured implements Tool {
             try { 
                 LOGGER.info("KEY: " + key);
                 String classValue = value.toString().split("\t")[1];
-                Player p = gson.fromJson(classValue.toString(), Player.class);
+                PlayerDeprecated p = gson.fromJson(classValue.toString(), PlayerDeprecated.class);
                 for (GameStats stats : p.getGames()) {
                     context.getCounter("Estimator", PlaytimeEstimatorMapper.class.getSimpleName()).increment(1);
                     if (stats.getCompletePlaytime() > 0) { 

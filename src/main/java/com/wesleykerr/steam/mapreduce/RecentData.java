@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.wesleykerr.steam.domain.player.Player;
+import com.wesleykerr.steam.domain.player.PlayerDeprecated;
 
 public class RecentData extends Configured implements Tool {
 	private static final Gson gson = new Gson();
@@ -34,7 +34,7 @@ public class RecentData extends Configured implements Tool {
 		public void map(LongWritable key, Text value, Context context) 
 				throws IOException, InterruptedException { 
 			try { 
-				Player p = gson.fromJson((String) value.toString(), Player.class);
+				PlayerDeprecated p = gson.fromJson((String) value.toString(), PlayerDeprecated.class);
 				if (p.isVisible() && !p.getGames().isEmpty()) 
 					context.write(new Text(p.getId()), value);
 			} catch (JsonSyntaxException e) { 
@@ -53,7 +53,7 @@ public class RecentData extends Configured implements Tool {
 			String json = null;
 			
 			for (Text value : values) { 
-				Player p = gson.fromJson((String) value.toString(), Player.class);
+				PlayerDeprecated p = gson.fromJson((String) value.toString(), PlayerDeprecated.class);
 				if (p.getUpdateDateTime() > maxTime) {
 					maxTime = p.getUpdateDateTime();
 					json = value.toString();

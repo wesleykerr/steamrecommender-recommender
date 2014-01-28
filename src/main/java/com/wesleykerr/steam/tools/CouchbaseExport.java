@@ -50,7 +50,7 @@ public class CouchbaseExport {
     
     public static void main(String[] args) throws Exception { 
 //        run("default", "active_players", new File("/tmp/training-data.gz"));
-        run("default", "all_keys", new File("/tmp/players.gz"));
-//        export.run("friends", "all_keys", new File("/tmp/friends.gz"));
+//        run("default", "all_keys", new File("/tmp/players.gz"));
+//        run("friends", "all_keys", new File("/tmp/friends.gz"));
     }
 }

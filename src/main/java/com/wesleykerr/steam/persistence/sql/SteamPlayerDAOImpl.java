@@ -23,6 +23,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     private Connection conn;
     
     private PreparedStatement insertPS;
+    
     private PreparedStatement updatePS;
     private PreparedStatement updateFriendsPS;
 
@@ -46,53 +47,42 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
 
     @Override
-    public void update(long steamId, int revision, boolean isPrivate, Long timestamp, String json) {
-        internalUpdate(steamId, revision, isPrivate, timestamp, json, false);
-    }
-    
-    @Override
-    public void updatedFriends(long steamId, Long timestamp, String json) {
-        try { 
-            if (updateFriendsPS == null)  
-                updateFriendsPS = conn.prepareStatement(UPDATE_FRIENDS);
-            
-            updateFriendsPS.setTimestamp(1, new Timestamp(timestamp));
-            updateFriendsPS.setString(2, json);
-            updateFriendsPS.setLong(3, steamId);
-            updateFriendsPS.executeUpdate();
-        } catch (Exception e) {
-            LOGGER.error("Unable to add " + steamId, e);
-            throw new RuntimeException(e);
-        }
-    }
-    
-    private void internalUpdate(long steamId, int revision, boolean isPrivate, 
-            Long timestamp, String json, boolean added) {
+    public void update(Player p) {
         try { 
             if (updatePS == null)  
                 updatePS = conn.prepareStatement(UPDATE);
             
-            updatePS.setInt(1, revision);
-            if (json != null) 
-                updatePS.setString(2, json);
-            else 
-                updatePS.setNull(2, java.sql.Types.LONGVARCHAR);
+            updatePS.setInt(1, p.getRevision());
             
-            updatePS.setBoolean(3, isPrivate);
-            if (timestamp != null) 
-                updatePS.setTimestamp(4, new Timestamp(timestamp));
+            if (p.getGames() == null)
+                updatePS.setNull(2, java.sql.Types.INTEGER);
+            else
+                updatePS.setInt(2, p.getNumGames());
+            updatePS.setBoolean(3, p.isPrivate());
+            
+            if (p.getLastUpdated() != null) 
+                updatePS.setTimestamp(4, new Timestamp(p.getLastUpdated()));
             else
                 updatePS.setNull(4, java.sql.Types.TIMESTAMP);
-            updatePS.setLong(5, steamId);
+            
+            if (p.getLastUpdatedFriends() != null) 
+                updatePS.setTimestamp(5, new Timestamp(p.getLastUpdatedFriends()));
+            else
+                updatePS.setNull(5, java.sql.Types.TIMESTAMP);
+
+            updatePS.setString(6, GsonUtils.getDefaultGson().toJson(p));
+            updatePS.setLong(7, p.getSteamId());
             
             int affected = updatePS.executeUpdate();
+            if (affected == 0)
+                LOGGER.error("Unable to update " + p.getSteamId() + " because not there");
+
         } catch (Exception e) {
-            LOGGER.error("Unable to add " + steamId, e);
+            LOGGER.error("Unable to update " + p.getSteamId(), e);
             throw new RuntimeException(e);
         }
     }
-
-
+    
     @Override
     public List<Player> getRefreshList(int limit) {
         List<Player> players = Lists.newArrayList();
@@ -132,7 +122,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
                 ResultSet rs = s.executeQuery(query)) { 
             
             long steamId = rs.getLong("steamid");
-            Player.Builder builder = Builder.create().withId(String.valueOf(steamId));
+            Player.Builder builder = Builder.create().withSteamId(steamId);
             
             players.add(builder.build());
             
@@ -165,15 +155,11 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             " VALUES (?, 0); ";
     
     public static final String UPDATE = 
-            "UPDATE steam_data.players SET revision = ?, content = ?, "
-            + "private = ?, last_updated = ? "
+            "UPDATE steam_data.players SET revision = ?, "
+            + "num_games = ?, private = ?, last_updated = ?, "
+            + "last_updated_friends = ?, content = ? "
             + "WHERE steamid = ?";
-    
-    public static final String UPDATE_FRIENDS = 
-            "UPDATE steam_data.players "
-            + "SET last_updated_friends = ?, content = ? "
-            + "WHERE steamid = ?";
-    
+
     public static final String SELECT_REFRESH = 
             "SELECT content FROM steam_data.players "
             + "WHERE private = 0 "
@@ -181,12 +167,11 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     
     public static final String SELECT_NEW = 
             "SELECT steamid FROM steam_data.players "
-            + "WHERE private = NULL "
-            + "AND content = NULL "
-            + "AND modify_datetime = NULL";
+            + "WHERE last_updated = NULL";
     
     public static final String SELECT_FRIENDS = 
             "SELECT steamid FROM steam_data.players "
             + "WHERE last_updated_friends = NULL";
+
 
 }

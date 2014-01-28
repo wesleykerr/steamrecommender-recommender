@@ -43,20 +43,14 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
 
     @Override
-    public void update(long steamId, int revision, boolean visible, Long timestamp, String json) {
+    public void update(Player p) { 
         try {
-            client.set(String.valueOf(steamId), json).get();
+            client.set(String.valueOf(p.getSteamId()), GsonUtils.getDefaultGson().toJson(p)).get();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public void updatedFriends(long steamId, Long timestamp, String json) {
-        // TODO Auto-generated method stub
-        
     }
 
     @Override

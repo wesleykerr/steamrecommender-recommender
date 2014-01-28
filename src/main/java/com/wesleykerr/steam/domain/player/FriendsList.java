@@ -5,7 +5,6 @@ import java.util.List;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
-import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.utils.GsonUtils;
 
 public class FriendsList {
@@ -16,7 +15,7 @@ public class FriendsList {
     private String rev;
 
     private List<Relationship> friendsList;
-    private long updateDateTime;
+    private Long updateDateTime;
     
     public FriendsList() { 
         

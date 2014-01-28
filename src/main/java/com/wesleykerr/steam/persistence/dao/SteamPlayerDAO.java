@@ -1,8 +1,8 @@
 package com.wesleykerr.steam.persistence.dao;
 
-import java.util.Iterator;
 import java.util.List;
 
+import com.wesleykerr.steam.domain.player.FriendsList;
 import com.wesleykerr.steam.domain.player.Player;
 
 public interface SteamPlayerDAO {
@@ -17,23 +17,11 @@ public interface SteamPlayerDAO {
 	public boolean addSteamId(long steamId);
 	
 	/**
-	 * Update the steam id with the information
-	 * given.
-	 * @param steamId
-	 * @param revision
-	 * @param isPrivate
-	 * @param timestamp - expected to be in UTC
-	 * @param document
-	 */
-	public void update(long steamId, int revision, boolean isPrivate, Long timestamp, String json);
-
-	/**
-	 * update this record since we updated the friends.
-	 * @param steamId
-	 * @param timestamp
-	 * @param json
-	 */
-    public void updatedFriends(long steamId, Long timestamp, String json);
+     * Update the steam id with the information
+     * given.
+     * @param p the updated player
+     */
+    public void update(Player p);
 
 	/**
 	 * Get a list of players that need to be refreshed.

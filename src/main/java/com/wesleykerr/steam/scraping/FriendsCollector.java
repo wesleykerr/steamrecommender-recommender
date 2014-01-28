@@ -20,12 +20,10 @@ import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
 import com.wesleykerr.steam.persistence.sql.SteamFriendsDAOImpl;
 import com.wesleykerr.steam.persistence.sql.SteamPlayerDAOImpl;
-import com.wesleykerr.utils.GsonUtils;
 import com.wesleykerr.utils.Utils;
 
 public class FriendsCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(FriendsCollector.class);
-    private static final String HOST = "api.steampowered.com";
 
     private static final int NUM_BATCHES = 10;
     private static final int BATCH_SIZE = 100;
@@ -72,21 +70,17 @@ public class FriendsCollector {
         
         SteamAPI steamAPI = new SteamAPI(queryDocument);
         for (Player player : steamIds) { 
-            LOGGER.info("Player: " + player.getId());
-            long steamId = Long.parseLong(player.getId());
+            LOGGER.info("Player: " + player.getSteamId());
             long millis = System.currentTimeMillis();
-            List<Relationship> friends = steamAPI.gatherFriends(steamId);
+            List<Relationship> friends = steamAPI.gatherFriends(player.getSteamId());
 
             Player updated = Builder.create()
                     .withPlayer(player)
-                    .withFriendsMillis(millis)
+                    .withLastUpdatedFriends(millis)
                     .build();
-            String updatedDocument = GsonUtils.getDefaultGson().toJson(updated);
-            steamPlayerDAO.updatedFriends(steamId, millis, updatedDocument);
-//            LOGGER.info("Updated: " + updatedDocument);
-
-            if (steamFriendsDAO.exists(steamId)) {
-                LOGGER.info("... " + player.getFriendsMillis());
+            steamPlayerDAO.update(updated);
+            if (steamFriendsDAO.exists(player.getSteamId())) {
+                LOGGER.info("... " + player.getLastUpdatedFriends());
                 continue;
             }
 
@@ -95,7 +89,7 @@ public class FriendsCollector {
             // be eventually persisted with this model when we update the player's games
             if (friends != null) { 
                 FriendsList friendsList = FriendsList.Builder.create()
-                        .withId(player.getId())
+                        .withId(String.valueOf(player.getSteamId()))
                         .withFriends(friends)
                         .withUpdateDateTime(System.currentTimeMillis())
                         .build();
@@ -106,14 +100,14 @@ public class FriendsCollector {
                 }
                 
                 for (Relationship r : friends) { 
-                    boolean added = steamPlayerDAO.addSteamId(steamId);
+                    boolean added = steamPlayerDAO.addSteamId(player.getSteamId());
                     operationsCounter.incrCounter();
                     if (added) 
                         playerCounterDAO.incrCounter();
                 }
             }
             
-            if (friends == null && player.isVisible()) { 
+            if (friends == null && !player.isPrivate()) { 
                 LOGGER.error("Player is visible, but has no friends (should be private)");
             }
             
