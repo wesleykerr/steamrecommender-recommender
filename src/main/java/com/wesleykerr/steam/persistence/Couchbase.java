@@ -9,9 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import net.spy.memcached.PersistTo;
-import net.spy.memcached.ReplicateTo;
-
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
@@ -30,6 +27,7 @@ public class Couchbase {
         
         String uri = prop.getProperty("uri");
         List<URI> hosts = Arrays.asList(new URI(uri));
+        
         return new CouchbaseClient(hosts, bucket, "");
     }
     
@@ -43,11 +41,11 @@ public class Couchbase {
             Player player = GsonUtils.getDefaultGson().fromJson(row.getValue(), Player.class);
             Player updated = Builder.create()
                     .withPlayer(player)
-                    .withFriendsMillis(null)
+                    .withLastUpdatedFriends(null)
                     .build();
             
-            client.set(updated.getId(), GsonUtils.getDefaultGson().toJson(updated), PersistTo.MASTER, ReplicateTo.ONE).get();
-            System.out.println(updated.getFriendsMillis());
+//            client.set(updated.getId(), GsonUtils.getDefaultGson().toJson(updated), PersistTo.MASTER, ReplicateTo.ONE).get();
+            System.out.println(updated.getLastUpdatedFriends());
         }
 
         client.shutdown();

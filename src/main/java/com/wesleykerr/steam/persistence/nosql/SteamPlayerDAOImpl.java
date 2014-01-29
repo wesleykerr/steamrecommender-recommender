@@ -27,9 +27,9 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     public SteamPlayerDAOImpl(CouchbaseClient client) { 
         this.client = client;
     }
-    
+
     @Override
-    public boolean add(long steamId) { 
+    public boolean addSteamId(long steamId) {
         Object o = client.get(String.valueOf(steamId));
         if (o == null) {
             JsonObject obj = new JsonObject();
@@ -41,11 +41,11 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
         }
         return false;
     }
-    
-    @Override 
-    public void update(String id, String document) { 
+
+    @Override
+    public void update(Player p) { 
         try {
-            client.set(id, document).get();
+            client.set(String.valueOf(p.getSteamId()), GsonUtils.getDefaultGson().toJson(p)).get();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
@@ -55,14 +55,38 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
 
     @Override
     public List<Player> getSteamIdsWithNoFriends(int limit) { 
-        List<Player> results = Lists.newArrayList();
-        View v = client.getView("players", "missing_friends");
-        Query q = new Query().setReduce(false).setLimit(limit).setIncludeDocs(true);
+        return getPlayersFromView("missing_friends", limit);
+    }
+
+    @Override
+    public List<Player> getRefreshList(int limit) {
+        return getPlayersFromView("week_old_players", limit);
+    }
+
+    @Override
+    public List<Player> getNewPlayers(int limit) {
+        return getPlayersFromView("new_players", limit);
+    }
+    
+    private List<Player> getPlayersFromView(String view, int limit) { 
+        View v = client.getView("players", view);
+        LOGGER.info("view: " + view);
+        Query q = new Query().
+                setReduce(false).
+                setLimit(limit).
+                setIncludeDocs(true);
+        
+        List<Player> players = Lists.newArrayList();
         ViewResponse response = client.query(v, q);
         for (ViewRow row : response) { 
-            Player player = GsonUtils.getDefaultGson().fromJson(row.getValue(), Player.class);
-            results.add(player);
+            Player p = GsonUtils.getDefaultGson().fromJson((String) row.getDocument(), Player.class);
+            players.add(p);
         }
-        return results;
+        return players;
+    }
+
+    @Override
+    public void close() {
+
     }
 }

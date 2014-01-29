@@ -4,40 +4,37 @@ import java.util.List;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.gson.annotations.SerializedName;
 
 
 public class Player {
 	
-    @SerializedName("_id")
-	private String id;
-
-    @SerializedName("_rev")
-	private String rev;
+	private Long steamId;
+	private Integer revision;
 	
 	private List<GameStats> games;
+	private Integer numGames;
 
-	private Long updateDateTime;
-	private Long friendsMillis;
+	private Long lastUpdated;
+	private Long lastUpdatedFriends;
 	
-	private boolean visible;
+	private Boolean isPrivate;
 	
 	public Player() { 
 		
 	}
 
 	/**
-	 * @return the _id
+	 * @return the steamId
 	 */
-	public String getId() {
-		return id;
+	public Long getSteamId() {
+		return steamId;
 	}
 
     /**
-     * @return the _rev
+     * @return the revision
      */
-    public String getRev() {
-        return rev;
+    public Integer getRevision() {
+        return revision;
     }
     
 
@@ -47,26 +44,35 @@ public class Player {
 	public List<GameStats> getGames() {
 		return games;
 	}
-
+	
 	/**
-	 * @return the updateDateTime
+	 * return the number of games that this account
+	 * owns.
+	 * @return
 	 */
-	public Long getUpdateDateTime() {
-		return updateDateTime;
+	public Integer getNumGames() { 
+	    return numGames;
 	}
 
 	/**
-	 * @return the friendsMillis
+	 * @return the lastUpdated
 	 */
-	public Long getFriendsMillis() { 
-        return friendsMillis;
+	public Long getLastUpdated() {
+		return lastUpdated;
+	}
+
+	/**
+	 * @return the lastUpdatedFriends
+	 */
+	public Long getLastUpdatedFriends() { 
+        return lastUpdatedFriends;
     }
 
 	/**
 	 * @return the visible
 	 */
-	public boolean isVisible() {
-		return visible;
+	public Boolean isPrivate() {
+		return isPrivate;
 	}
 
 
@@ -79,43 +85,51 @@ public class Player {
 	    }
 	    
 	    public Builder withPlayer(Player p) {
-	        player.id = p.id;
-	        player.rev = p.rev;
+	        player.steamId = p.steamId;
+	        player.revision = p.revision;
 	        if (p.games != null) 
 	            player.games = Lists.newArrayList(p.games);
-	        player.updateDateTime = p.updateDateTime;
-	        player.friendsMillis = p.friendsMillis;
-	        player.visible = p.visible;
+	        player.lastUpdated = p.lastUpdated;
+	        player.lastUpdatedFriends = p.lastUpdatedFriends;
+	        player.isPrivate = p.isPrivate;
 	        return this;
 	    }
 	    
-	    public Builder withId(String id) {
-	        player.id = id;
+	    public Builder withSteamId(Long steamId) {
+	        player.steamId = steamId;
 	        return this;
 	    }
 	    
-	    public Builder withRev(String rev) { 
-	        player.rev = rev;
+	    public Builder withRevision(Integer revision) { 
+	        player.revision = revision;
 	        return this;
 	    }
 	    
 	    public Builder withGames(List<GameStats> games) { 
-	        player.games = Lists.newArrayList(games);
+	        if (games != null) {
+	            player.games = Lists.newArrayList(games);
+	            player.numGames = games.size();
+	        }
 	        return this;
 	    }
 	    
-	    public Builder isVisible(boolean visible) {
-	        player.visible = visible;
+	    public Builder withNumGames(Integer numGames) { 
+	        player.numGames = numGames;
 	        return this;
 	    }
 	    
-	    public Builder withUpdateDateTime(Long updateDateTime) { 
-	        player.updateDateTime = updateDateTime;
+	    public Builder isPrivate(Boolean isPrivate) {
+	        player.isPrivate = isPrivate;
 	        return this;
 	    }
 	    
-	    public Builder withFriendsMillis(Long friendsMillis) { 
-	        player.friendsMillis = friendsMillis;
+	    public Builder withLastUpdated(Long lastUpdated) { 
+	        player.lastUpdated = lastUpdated;
+	        return this;
+	    }
+	    
+	    public Builder withLastUpdatedFriends(Long lastUpdatedFriends) { 
+	        player.lastUpdatedFriends = lastUpdatedFriends;
 	        return this;
 	    }
 	    

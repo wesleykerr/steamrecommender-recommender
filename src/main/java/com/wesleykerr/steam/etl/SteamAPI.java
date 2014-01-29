@@ -97,7 +97,7 @@ public class SteamAPI {
 			JsonObject response = obj.get("response").getAsJsonObject();
 			if (!response.has("games")) {
 				LOGGER.info("Private profile " + steamId);
-				return statsArray;
+				return null;
 			}
 			LOGGER.debug(obj.toString());
 			

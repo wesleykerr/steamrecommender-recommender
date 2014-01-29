@@ -24,12 +24,12 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     @Override
     public boolean add(FriendsList friendsList) { 
         String value = GsonUtils.getDefaultGson().toJson(friendsList);
-        Object o = client.get(friendsList.getId());
+        Object o = client.get(String.valueOf(friendsList.getSteamId()));
         if (o == null) { 
-            client.add(friendsList.getId(), value);
+            client.add(String.valueOf(friendsList.getSteamId()), value);
             return true;
         } else {
-            update(friendsList.getId(), value);
+            update(String.valueOf(friendsList.getSteamId()), value);
             return false;
         }
     }
@@ -37,12 +37,12 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     @Override 
     public void update(FriendsList friendsList) { 
         String value = GsonUtils.getDefaultGson().toJson(friendsList);
-        update(friendsList.getId(), value);
+        update(String.valueOf(friendsList.getSteamId()), value);
     }
     
     @Override
-    public boolean exists(String key) { 
-        return client.get(key) != null;
+    public boolean exists(long key) { 
+        return client.get(String.valueOf(key)) != null;
     }
     
     private void update(String key, String value) { 

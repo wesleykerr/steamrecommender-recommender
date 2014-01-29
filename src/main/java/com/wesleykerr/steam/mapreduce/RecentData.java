@@ -35,8 +35,8 @@ public class RecentData extends Configured implements Tool {
 				throws IOException, InterruptedException { 
 			try { 
 				Player p = gson.fromJson((String) value.toString(), Player.class);
-				if (p.isVisible() && !p.getGames().isEmpty()) 
-					context.write(new Text(p.getId()), value);
+				if (!p.isPrivate() && !p.getGames().isEmpty()) 
+					context.write(new Text(String.valueOf(p.getSteamId())), value);
 			} catch (JsonSyntaxException e) { 
 				LOGGER.error("malformed json: " + value.toString());
 			} catch (NumberFormatException nfe) {
@@ -54,8 +54,8 @@ public class RecentData extends Configured implements Tool {
 			
 			for (Text value : values) { 
 				Player p = gson.fromJson((String) value.toString(), Player.class);
-				if (p.getUpdateDateTime() > maxTime) {
-					maxTime = p.getUpdateDateTime();
+				if (p.getLastUpdated() > maxTime) {
+					maxTime = p.getLastUpdated();
 					json = value.toString();
 				}
 			}

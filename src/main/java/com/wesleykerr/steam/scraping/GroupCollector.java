@@ -80,7 +80,7 @@ public class GroupCollector {
 
             if (playerURL.contains("profiles")) { 
                 long steamId = Long.parseLong(playerURL.substring(index+1));
-                boolean added = steamPlayerDAO.add(steamId);
+                boolean added = steamPlayerDAO.addSteamId(steamId);
                 if (added)
                     playerCounterDAO.incrCounter();
             } else if (playerURL.contains("id")) { 
@@ -145,7 +145,7 @@ public class GroupCollector {
                 Element idElement = doc.select("steamid64").first();                    
 
                 long steamId = Long.parseLong(idElement.text());
-                boolean added = steamPlayerDAO.add(steamId);
+                boolean added = steamPlayerDAO.addSteamId(steamId);
                 if (added)
                     playerCounterDAO.incrCounter();
 

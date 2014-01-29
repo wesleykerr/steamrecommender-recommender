@@ -1,35 +1,32 @@
 package com.wesleykerr.steam.scraping;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.couchbase.client.CouchbaseClient;
 import com.wesleykerr.steam.QueryDocument;
 import com.wesleykerr.steam.domain.player.FriendsList;
 import com.wesleykerr.steam.domain.player.FriendsList.Relationship;
 import com.wesleykerr.steam.domain.player.Player;
 import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.steam.etl.SteamAPI;
-import com.wesleykerr.steam.persistence.Couchbase;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
 import com.wesleykerr.steam.persistence.dao.SteamFriendsDAO;
 import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
-import com.wesleykerr.steam.persistence.nosql.SteamFriendsDAOImpl;
-import com.wesleykerr.steam.persistence.nosql.SteamPlayerDAOImpl;
-import com.wesleykerr.utils.GsonUtils;
+import com.wesleykerr.steam.persistence.sql.SteamFriendsDAOImpl;
+import com.wesleykerr.steam.persistence.sql.SteamPlayerDAOImpl;
 import com.wesleykerr.utils.Utils;
 
 public class FriendsCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(FriendsCollector.class);
-    private static final String HOST = "api.steampowered.com";
 
-    private static final int NUM_BATCHES = 10;
-    private static final int BATCH_SIZE = 100;
+    private static final int NUM_BATCHES = 1;
+    private static final int BATCH_SIZE = 3;
 
     private QueryDocument queryDocument;
 
@@ -73,20 +70,17 @@ public class FriendsCollector {
         
         SteamAPI steamAPI = new SteamAPI(queryDocument);
         for (Player player : steamIds) { 
-            LOGGER.info("Player: " + player.getId());
-            long steamId = Long.parseLong(player.getId());
-            List<Relationship> friends = steamAPI.gatherFriends(steamId);
+            LOGGER.info("Player: " + player.getSteamId());
+            long millis = System.currentTimeMillis();
+            List<Relationship> friends = steamAPI.gatherFriends(player.getSteamId());
 
             Player updated = Builder.create()
                     .withPlayer(player)
-                    .withFriendsMillis(System.currentTimeMillis())
+                    .withLastUpdatedFriends(millis)
                     .build();
-            String updatedDocument = GsonUtils.getDefaultGson().toJson(updated);
-            steamPlayerDAO.update(updated.getId(), updatedDocument);
-//            LOGGER.info("Updated: " + updatedDocument);
-
-            if (steamFriendsDAO.exists(player.getId())) {
-                LOGGER.info("... " + player.getFriendsMillis());
+            steamPlayerDAO.update(updated);
+            if (steamFriendsDAO.exists(player.getSteamId())) {
+                LOGGER.info("... " + player.getLastUpdatedFriends());
                 continue;
             }
 
@@ -95,9 +89,10 @@ public class FriendsCollector {
             // be eventually persisted with this model when we update the player's games
             if (friends != null) { 
                 FriendsList friendsList = FriendsList.Builder.create()
-                        .withId(player.getId())
+                        .withSteamId(player.getSteamId())
                         .withFriends(friends)
-                        .withUpdateDateTime(System.currentTimeMillis())
+                        .withLastUpdated(System.currentTimeMillis())
+                        .withRevision(1)
                         .build();
                 
                 boolean newFriends = steamFriendsDAO.add(friendsList);
@@ -106,14 +101,14 @@ public class FriendsCollector {
                 }
                 
                 for (Relationship r : friends) { 
-                    boolean added = steamPlayerDAO.add(Long.parseLong(r.getSteamid()));
+                    boolean added = steamPlayerDAO.addSteamId(Long.parseLong(r.getSteamid()));
                     operationsCounter.incrCounter();
                     if (added) 
                         playerCounterDAO.incrCounter();
                 }
             }
             
-            if (friends == null && player.isVisible()) { 
+            if (friends == null && !player.isPrivate()) { 
                 LOGGER.error("Player is visible, but has no friends (should be private)");
             }
             
@@ -122,15 +117,11 @@ public class FriendsCollector {
     }
     
     public static void main(String[] args) throws Exception { 
-        CouchbaseClient defaultClient = null;
-        CouchbaseClient friendsClient = null;
-        MySQL mySQL = null;
+        MySQL mySQL = MySQL.getDreamhost();
         try { 
-            defaultClient = Couchbase.connect("default");
-            SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(defaultClient);
-
-            friendsClient = Couchbase.connect("friends");
-            SteamFriendsDAO steamFriendsDAO = new SteamFriendsDAOImpl(friendsClient);
+            Connection conn = mySQL.getConnection();
+            SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(conn);
+            SteamFriendsDAO steamFriendsDAO = new SteamFriendsDAOImpl(conn);
 
             FriendsCollector collector = new FriendsCollector(steamPlayerDAO, steamFriendsDAO);
             collector.run();
@@ -138,10 +129,6 @@ public class FriendsCollector {
         } finally { 
             if (mySQL != null)
                 mySQL.disconnect();
-            if (defaultClient != null) 
-                defaultClient.shutdown();
-            if (friendsClient != null) 
-                friendsClient.shutdown();
         }
     }
 }
