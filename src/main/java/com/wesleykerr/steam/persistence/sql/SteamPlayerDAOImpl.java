@@ -150,7 +150,8 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     public static final String SELECT_REFRESH = 
             "SELECT content FROM steam_data.players "
             + "WHERE (private is NULL OR private = 0) "
-            + "AND last_updated <= date_sub(CURRENT_TIMESTAMP, INTERVAL 7 DAY) ";
+            + "AND last_updated <= date_sub(CURRENT_TIMESTAMP, INTERVAL 7 DAY) "
+            + "AND revision > 0 ";
     
     public static final String SELECT_NEW = 
             "SELECT content FROM steam_data.players "
