@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.wesleykerr.steam.domain.player.Player;
-import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.utils.GsonUtils;
 
@@ -139,8 +138,8 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
     
     public static final String INSERT = 
-            "INSERT INTO steam_data.audit_players (steamid, revision) " + 
-            " VALUES (?, 0); ";
+            "INSERT INTO steam_data.audit_players (steamid, revision, last_updated) " + 
+            " VALUES (?, 0, '1990-01-01 00:00:00'); ";
     
     public static final String UPDATE = 
             "INSERT INTO steam_data.audit_players "
@@ -155,7 +154,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     
     public static final String SELECT_NEW = 
             "SELECT content FROM steam_data.players "
-            + "WHERE last_updated is NULL";
+            + "WHERE revision = 0";
     
     public static final String SELECT_FRIENDS = 
             "SELECT content FROM steam_data.players "

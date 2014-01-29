@@ -81,7 +81,7 @@ public class SteamAPI {
         return null;
 	}
 
-	public List<GameStats> gatherOwnedGames(long steamId, Map<Long,List<String>> genreMap) { 
+	public List<GameStats> gatherOwnedGames(long steamId) { 
         Preconditions.checkNotNull(steamKey);
         Preconditions.checkNotNull(userAgent);
 		
@@ -109,7 +109,6 @@ public class SteamAPI {
 			    JsonObject jsonObj = element.getAsJsonObject();
 				GameStats stats = new GameStats();
 				stats.setAppid(jsonObj.get("appid").getAsLong());
-				stats.setGenres(genreMap.get(stats.getAppid()));
 				
 				if (jsonObj.has("playtime_forever")) { 
 					stats.setCompletePlaytime(jsonObj.get("playtime_forever").getAsLong());

@@ -24,6 +24,10 @@ add index last_updated_idx (last_updated ASC) ;
 alter table steam_data.audit_players 
 add index last_updated_friends_idx (last_updated_friends ASC) ;
 
+alter table steam_data.audit_players 
+add index revision_idx (revision ASC) ;
+
+
 CREATE VIEW steam_data.players AS
 SELECT t1.*
 FROM audit_players AS t1

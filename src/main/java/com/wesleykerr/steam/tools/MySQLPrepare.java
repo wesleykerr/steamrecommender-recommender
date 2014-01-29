@@ -153,7 +153,7 @@ public class MySQLPrepare {
 
     public static void main(String[] args) throws Exception { 
         MySQLPrepare prepare = new MySQLPrepare();
-//        prepare.preparePlayers();
+        prepare.preparePlayers();
         prepare.prepareFriends();
     }
     

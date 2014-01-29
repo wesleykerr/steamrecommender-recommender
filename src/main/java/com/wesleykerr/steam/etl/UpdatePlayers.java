@@ -1,13 +1,10 @@
 package com.wesleykerr.steam.etl;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.InputStream;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TimeZone;
@@ -22,12 +19,9 @@ import com.wesleykerr.steam.domain.player.Player;
 import com.wesleykerr.steam.domain.player.Player.Builder;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.persistence.dao.CounterDAO;
-import com.wesleykerr.steam.persistence.dao.GenresDAO;
 import com.wesleykerr.steam.persistence.dao.SteamPlayerDAO;
 import com.wesleykerr.steam.persistence.memory.CounterDAOImpl;
-import com.wesleykerr.steam.persistence.sql.GenresDAOImpl;
 import com.wesleykerr.steam.persistence.sql.SteamPlayerDAOImpl;
-import com.wesleykerr.utils.GsonUtils;
 
 public class UpdatePlayers {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdatePlayers.class);
@@ -35,7 +29,6 @@ public class UpdatePlayers {
     private static int BATCH_SIZE = 100;
 	private static int NUM_BATCHES = 10;
 
-	private Map<Long,List<String>> genreMap;
 	private long millis;
 	
 	private QueryDocument queryDoc;
@@ -52,7 +45,7 @@ public class UpdatePlayers {
 	
 	public void runBatch(List<Player> players, SteamPlayerDAO playerDAO) throws Exception { 
         for (Player p : players) { 
-            List<GameStats> list = info.gatherOwnedGames(p.getSteamId(), genreMap);
+            List<GameStats> list = info.gatherOwnedGames(p.getSteamId());
             Builder builder = Builder.create()
                     .withPlayer(p)
                     .withRevision(p.getRevision()+1)
@@ -63,7 +56,7 @@ public class UpdatePlayers {
             LOGGER.info("query player " + updated.getSteamId());
             
             playerDAO.update(updated);
-//            Thread.currentThread().sleep(1500);
+            Thread.currentThread().sleep(1500);
             
         }
 	}
@@ -71,9 +64,6 @@ public class UpdatePlayers {
 	public void run(String viewName) throws Exception { 
 	    MySQL mySQL = MySQL.getDreamhost();
         
-        GenresDAO genresDAO = new GenresDAOImpl(mySQL.getConnection());
-        genreMap = genresDAO.getGenresByAppId();
-
 	    SteamPlayerDAO playerDAO = new SteamPlayerDAOImpl(mySQL.getConnection());
 	    try { 
 	        Random r = new Random();
