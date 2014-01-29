@@ -92,6 +92,7 @@ public class FriendsCollector {
                         .withSteamId(player.getSteamId())
                         .withFriends(friends)
                         .withLastUpdated(System.currentTimeMillis())
+                        .withRevision(1)
                         .build();
                 
                 boolean newFriends = steamFriendsDAO.add(friendsList);

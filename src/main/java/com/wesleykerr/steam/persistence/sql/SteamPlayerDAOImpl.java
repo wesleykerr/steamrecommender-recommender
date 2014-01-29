@@ -45,33 +45,33 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             return false;
         }
     }
-
+    
     @Override
     public void update(Player p) {
         try { 
             if (updatePS == null)  
                 updatePS = conn.prepareStatement(UPDATE);
             
-            updatePS.setInt(1, p.getRevision());
+            updatePS.setLong(1, p.getSteamId());
+            updatePS.setInt(2, p.getRevision());
             
             if (p.getNumGames() == null)
-                updatePS.setNull(2, java.sql.Types.INTEGER);
+                updatePS.setNull(3, java.sql.Types.INTEGER);
             else
-                updatePS.setInt(2, p.getNumGames());
-            updatePS.setBoolean(3, p.isPrivate());
+                updatePS.setInt(3, p.getNumGames());
+            updatePS.setBoolean(4, p.isPrivate());
             
             if (p.getLastUpdated() != null) 
-                updatePS.setTimestamp(4, new Timestamp(p.getLastUpdated()));
-            else
-                updatePS.setNull(4, java.sql.Types.TIMESTAMP);
-            
-            if (p.getLastUpdatedFriends() != null) 
-                updatePS.setTimestamp(5, new Timestamp(p.getLastUpdatedFriends()));
+                updatePS.setTimestamp(5, new Timestamp(p.getLastUpdated()));
             else
                 updatePS.setNull(5, java.sql.Types.TIMESTAMP);
+            
+            if (p.getLastUpdatedFriends() != null) 
+                updatePS.setTimestamp(6, new Timestamp(p.getLastUpdatedFriends()));
+            else
+                updatePS.setNull(6, java.sql.Types.TIMESTAMP);
 
-            updatePS.setString(6, GsonUtils.getDefaultGson().toJson(p));
-            updatePS.setLong(7, p.getSteamId());
+            updatePS.setString(7, GsonUtils.getDefaultGson().toJson(p));
             
             int affected = updatePS.executeUpdate();
             if (affected == 0)
@@ -82,6 +82,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             throw new RuntimeException(e);
         }
     }
+
     
     @Override
     public List<Player> getRefreshList(int limit) {
@@ -138,14 +139,14 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
     
     public static final String INSERT = 
-            "INSERT INTO steam_data.players (steamid, revision) " + 
+            "INSERT INTO steam_data.audit_players (steamid, revision) " + 
             " VALUES (?, 0); ";
     
     public static final String UPDATE = 
-            "UPDATE steam_data.players SET revision = ?, "
-            + "num_games = ?, private = ?, last_updated = ?, "
-            + "last_updated_friends = ?, content = ? "
-            + "WHERE steamid = ?";
+            "INSERT INTO steam_data.audit_players "
+            + "(steamid, revision, num_games, private, "
+            + "last_updated, last_updated_friends, content) "
+            + "VALUES (?,?,?,?,?,?,?)";
 
     public static final String SELECT_REFRESH = 
             "SELECT content FROM steam_data.players "

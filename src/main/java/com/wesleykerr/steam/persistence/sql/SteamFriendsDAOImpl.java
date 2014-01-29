@@ -18,7 +18,6 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     private Connection conn;
 
     private PreparedStatement insertPS;
-    private PreparedStatement updatePS;
     private PreparedStatement selectPS;
     
     public SteamFriendsDAOImpl(Connection conn) { 
@@ -27,49 +26,29 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     
     @Override
     public boolean add(FriendsList friendsList) { 
-        if (exists(friendsList.getSteamId())) {
-            update(friendsList);
-            return false;
-        } else { 
-            try { 
-                if (insertPS == null)
-                    insertPS = conn.prepareStatement(INSERT);
+        try { 
+            if (insertPS == null)
+                insertPS = conn.prepareStatement(INSERT);
 
-                insertPS.setLong(1, friendsList.getSteamId());
-                if (friendsList.getNumFriends() == null)
-                    insertPS.setNull(2, java.sql.Types.INTEGER);
-                else
-                    insertPS.setInt(2, friendsList.getNumFriends());
-                insertPS.setTimestamp(3, new Timestamp(friendsList.getLastUpdated()));
-                insertPS.setString(4, GsonUtils.getDefaultGson().toJson(friendsList));
-                insertPS.executeUpdate();
-                
-                return true;
-            } catch (SQLException e) { 
-                throw new RuntimeException(e);
-            }
+            insertPS.setLong(1, friendsList.getSteamId());
+            insertPS.setLong(2, friendsList.getRevision());
+            if (friendsList.getNumFriends() == null)
+                insertPS.setNull(3, java.sql.Types.INTEGER);
+            else
+                insertPS.setInt(3, friendsList.getNumFriends());
+            insertPS.setTimestamp(4, new Timestamp(friendsList.getLastUpdated()));
+            insertPS.setString(5, GsonUtils.getDefaultGson().toJson(friendsList));
+            insertPS.executeUpdate();
+            
+            return true;
+        } catch (SQLException e) { 
+            throw new RuntimeException(e);
         }
     }
     
     @Override 
     public void update(FriendsList friendsList) { 
-        
-        if (exists(friendsList.getSteamId())) {
-            try { 
-                if (updatePS == null)
-                    updatePS = conn.prepareStatement(UPDATE);
-
-                updatePS.setString(1, GsonUtils.getDefaultGson().toJson(friendsList));
-                updatePS.setTimestamp(2, new Timestamp(friendsList.getLastUpdated()));
-                updatePS.setInt(3, friendsList.getNumFriends());
-                updatePS.setLong(4, friendsList.getSteamId());
-                updatePS.executeUpdate();
-            } catch (SQLException e) { 
-                throw new RuntimeException(e);
-            }
-        } else { 
-            add(friendsList);
-        }
+        add(friendsList);
     }
     
     @Override
@@ -90,17 +69,11 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
     }
     
     private static final String INSERT = 
-            "INSERT INTO steam_data.friends "
+            "INSERT INTO steam_data.audit_friends "
             + "(steamid, revision, num_friends, last_updated, content) "
-            + "VALUES (?, 1, ?, ?, ?) ";
-    
-    private static final String UPDATE = 
-            "UPDATE steam_data.friends "
-            + "SET content = ?, revision = revision+1, "
-            + "num_friends = ?, last_updated = ? "
-            + "WHERE steamid = ?";
+            + "VALUES (?, ?, ?, ?, ?) ";
     
     private static final String SELECT = 
             "SELECT steamid from steam_data.friends "
-            + "WHERE steamid = ? AND content <> NULL ";
+            + "WHERE steamid = ?";
 }

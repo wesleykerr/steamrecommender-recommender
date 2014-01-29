@@ -32,8 +32,8 @@ import com.wesleykerr.utils.GsonUtils;
 public class UpdatePlayers {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UpdatePlayers.class);
 	
+    private static int BATCH_SIZE = 100;
 	private static int NUM_BATCHES = 10;
-	private static int BATCH_SIZE = 100;
 
 	private Map<Long,List<String>> genreMap;
 	private long millis;
@@ -51,12 +51,11 @@ public class UpdatePlayers {
 	}
 	
 	public void runBatch(List<Player> players, SteamPlayerDAO playerDAO) throws Exception { 
-//        BufferedWriter out = new BufferedWriter(new FileWriter("/data/steam/player-updates", true));
         for (Player p : players) { 
             List<GameStats> list = info.gatherOwnedGames(p.getSteamId(), genreMap);
             Builder builder = Builder.create()
-                    .withRevision(p.getRevision()+1)
                     .withPlayer(p)
+                    .withRevision(p.getRevision()+1)
                     .withGames(list)
                     .isPrivate(list == null)
                     .withLastUpdated(millis);
@@ -64,12 +63,9 @@ public class UpdatePlayers {
             LOGGER.info("query player " + updated.getSteamId());
             
             playerDAO.update(updated);
-//            out.write(GsonUtils.getDefaultGson().toJson(updated));
-//            out.write("\n");
 //            Thread.currentThread().sleep(1500);
             
         }
-//        out.close();
 	}
 
 	public void run(String viewName) throws Exception { 

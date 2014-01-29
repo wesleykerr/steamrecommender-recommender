@@ -114,7 +114,10 @@ public class FriendsList {
         }
         
         public Builder withFriends(List<Relationship> friends) { 
-            friendsList.friendsList = Lists.newArrayList(friends);
+            if (friends != null) {
+                friendsList.friendsList = Lists.newArrayList(friends);
+                friendsList.numFriends = friends.size();
+            }
             return this;
         }
         

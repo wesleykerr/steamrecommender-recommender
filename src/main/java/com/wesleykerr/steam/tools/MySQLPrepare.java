@@ -115,7 +115,7 @@ public class MySQLPrepare {
         LOGGER.info("...Magic Games: " + map.get("magic-games"));
     }
     
-    public static void prepareFriends() throws Exception { 
+    public void prepareFriends() throws Exception { 
         File inputFile = new File("/tmp/friends.gz");
         DateFormat formatter = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss");
         
@@ -131,12 +131,16 @@ public class MySQLPrepare {
                 builder.withSteamId(Long.parseLong(list.getId()));
                 builder.withFriends(list.getFriendsList());
                 builder.withLastUpdated(list.getUpdateDateTime());
-                builder.withRevision(Integer.parseInt(list.getRev()));
+                if (list.getRev() != null) 
+                    builder.withRevision(Integer.parseInt(list.getRev()));
+                else 
+                    builder.withRevision(1);
                 FriendsList fl = builder.build();
 
                 StringBuffer buf = new StringBuffer();
                 buf.append(fl.getSteamId()).append(",");
                 buf.append(fl.getRevision()).append(",");
+                buf.append(Objects.firstNonNull(fl.getNumFriends(), "NULL")).append(",");
 
                 Date date = new Date(fl.getLastUpdated());
                 buf.append(formatter.format(date)).append(",");
@@ -149,8 +153,8 @@ public class MySQLPrepare {
 
     public static void main(String[] args) throws Exception { 
         MySQLPrepare prepare = new MySQLPrepare();
-        prepare.preparePlayers();
-//        prepareFriends();
+//        prepare.preparePlayers();
+        prepare.prepareFriends();
     }
     
     /**
@@ -264,13 +268,4 @@ public class MySQLPrepare {
             return updateDateTime;
         }
     }
-    
-    /* TRIGGER audit
-    BEGIN
-        INSERT INTO audit_players (steamid, revision, content, private, last_updated, last_updated_friends, modify_datetime)
-            VALUES (NEW.steamid, NEW.revision, NEW.content, NEW.private, NEW.last_updated, NEW.last_updated_friends, NOW());
-      END
-
-     */
-
 }
