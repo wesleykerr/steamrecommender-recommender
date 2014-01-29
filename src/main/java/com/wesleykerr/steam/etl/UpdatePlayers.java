@@ -56,7 +56,7 @@ public class UpdatePlayers {
             LOGGER.info("query player " + updated.getSteamId());
             
             playerDAO.update(updated);
-            Thread.currentThread().sleep(1500);
+            Thread.currentThread().sleep(900);
             
         }
 	}
