@@ -25,8 +25,8 @@ import com.wesleykerr.utils.Utils;
 public class FriendsCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(FriendsCollector.class);
 
-    private static final int NUM_BATCHES = 1;
-    private static final int BATCH_SIZE = 3;
+    private static int NUM_BATCHES = 10;
+    private static int BATCH_SIZE = 100;
 
     private QueryDocument queryDocument;
 
@@ -117,6 +117,13 @@ public class FriendsCollector {
     }
     
     public static void main(String[] args) throws Exception { 
+        if (args.length != 2) {
+            System.out.println("Usage: FriendsCollector <batch-size> <num-batches>");
+            System.exit(0);
+        }
+        BATCH_SIZE = Integer.parseInt(args[0]);
+        NUM_BATCHES = Integer.parseInt(args[1]);
+
         MySQL mySQL = MySQL.getDreamhost();
         try { 
             Connection conn = mySQL.getConnection();

@@ -59,8 +59,10 @@ public class SteamFriendsDAOImpl implements SteamFriendsDAO {
 
             selectPS.setLong(1, steamId);
             try (ResultSet rs = selectPS.executeQuery()) { 
-                if (rs.next())
+                if (rs.next()) {
+                    LOGGER.info(rs.getLong(1) + " found it...");
                     return true;
+                }
                 return false;
             }
         } catch (SQLException e) { 
