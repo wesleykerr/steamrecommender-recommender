@@ -52,3 +52,11 @@ create table steam_data.audit_friends (
 alter table steam_data.audit_friends 
 add index steamid_idx (steamid ASC) ;
 
+CREATE VIEW steam_data.friends AS
+SELECT t1.*
+FROM audit_friends AS t1
+LEFT OUTER JOIN audit_friends AS t2
+  ON t1.steamid = t2.steamid 
+        AND (t1.last_updated < t2.last_updated 
+         OR (t1.last_updated = t2.last_updated AND t1.revision < t2.revision))
+WHERE t2.steamid IS NULL;
