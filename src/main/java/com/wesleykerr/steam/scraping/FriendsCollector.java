@@ -76,6 +76,7 @@ public class FriendsCollector {
 
             Player updated = Builder.create()
                     .withPlayer(player)
+                    .withRevision(player.getRevision()+1)
                     .withLastUpdatedFriends(millis)
                     .build();
             steamPlayerDAO.update(updated);
@@ -124,7 +125,7 @@ public class FriendsCollector {
         BATCH_SIZE = Integer.parseInt(args[0]);
         NUM_BATCHES = Integer.parseInt(args[1]);
 
-        MySQL mySQL = MySQL.getDreamhost();
+        MySQL mySQL = MySQL.getDatabase("config/mysql-lh.properties");
         try { 
             Connection conn = mySQL.getConnection();
             SteamPlayerDAO steamPlayerDAO = new SteamPlayerDAOImpl(conn);

@@ -62,8 +62,7 @@ public class UpdatePlayers {
 	}
 
 	public void run(String viewName) throws Exception { 
-	    MySQL mySQL = MySQL.getDreamhost();
-        
+	    MySQL mySQL = MySQL.getDatabase("config/mysql-lh.properties");
 	    SteamPlayerDAO playerDAO = new SteamPlayerDAOImpl(mySQL.getConnection());
 	    try { 
 	        Random r = new Random();

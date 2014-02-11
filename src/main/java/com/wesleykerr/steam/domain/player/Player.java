@@ -87,8 +87,12 @@ public class Player {
 	    public Builder withPlayer(Player p) {
 	        player.steamId = p.steamId;
 	        player.revision = p.revision;
-	        if (p.games != null) 
+	        if (p.games != null) {
 	            player.games = Lists.newArrayList(p.games);
+	            player.numGames = player.games.size();
+	        } else { 
+	        	player.numGames = 0;
+	        }
 	        player.lastUpdated = p.lastUpdated;
 	        player.lastUpdatedFriends = p.lastUpdatedFriends;
 	        player.isPrivate = p.isPrivate;
