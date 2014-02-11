@@ -76,6 +76,7 @@ public class FriendsCollector {
 
             Player updated = Builder.create()
                     .withPlayer(player)
+                    .withRevision(player.getRevision()+1)
                     .withLastUpdatedFriends(millis)
                     .build();
             steamPlayerDAO.update(updated);
