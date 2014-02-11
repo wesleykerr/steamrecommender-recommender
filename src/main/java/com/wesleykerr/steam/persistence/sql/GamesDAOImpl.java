@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.wesleykerr.steam.domain.game.Game;
+import com.wesleykerr.steam.domain.game.GameplayStats;
 import com.wesleykerr.steam.persistence.dao.GamesDAO;
 
 public class GamesDAOImpl implements GamesDAO {
@@ -19,6 +20,8 @@ public class GamesDAOImpl implements GamesDAO {
     
     private PreparedStatement getPS;
     private PreparedStatement setRecommsPS;
+    
+    private PreparedStatement updatePS;
     
     public GamesDAOImpl(Connection conn) { 
         this.conn = conn;
@@ -88,9 +91,33 @@ public class GamesDAOImpl implements GamesDAO {
             LOGGER.error("Unable to update " + appid);
     } 
 
+	@Override
+	public void updateOrAddStats(long appid, GameplayStats stats) throws Exception {
+		if (updatePS == null) 
+			updatePS = conn.prepareStatement(UPDATE);
+		
+		updatePS.setLong(1, stats.getOwned());
+		updatePS.setLong(2, stats.getNotPlayed());
+		updatePS.setDouble(3, stats.getTotalPlaytime());
+		updatePS.setDouble(4, stats.getQ25Playtime());
+		updatePS.setDouble(5, stats.getQ75Playtime());
+		updatePS.setDouble(6, stats.getMedianPlaytime());
+		updatePS.setLong(7, appid);
+		
+		int updated = updatePS.executeUpdate();
+		if (updated == 0)
+			LOGGER.error("Unable to update " + appid);
+		
+	}
+
     private static String GET = 
             "select * from game_recommender.games where appid = ?";
     private static String SET_RECOMMS = 
             "update game_recommender.games set recomms = ? where appid = ?";
+
+    private static final String UPDATE = 
+			"update game_recommender.games set owned = ?, not_played = ?, " +
+			"total_playtime = ?, total_q25 = ?, total_q75 = ?, total_median = ?, " + 
+			"where appid = ?";
 
 }

@@ -1,6 +1,7 @@
 package com.wesleykerr.steam.persistence.dao;
 
 import com.wesleykerr.steam.domain.game.Game;
+import com.wesleykerr.steam.domain.game.GameplayStats;
 
 public interface GamesDAO {
 
@@ -19,4 +20,13 @@ public interface GamesDAO {
      * @throws Exception
      */
     void setRecomms(long appid, String recomms) throws Exception;
+    
+    
+    /**
+     * Updates the gameplay stats in the database.
+     * @param appid
+     * @param stats
+     * @throws Exception
+     */
+    void updateOrAddStats(long appid, GameplayStats stats) throws Exception;
 }

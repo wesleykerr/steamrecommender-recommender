@@ -83,44 +83,44 @@ public class PushPlaytime {
 	}
 	
 	private void updateOrAdd(Long appid, GameplayStats stats) throws Exception {
-		LOGGER.info("updating: " + appid);
-		psUpdate.setLong(1, stats.getOwned());
-		psUpdate.setLong(2, stats.getNotPlayed());
-		psUpdate.setDouble(3, stats.getTotal());
-
-        psUpdate.setLong(7, stats.getPlayedRecently());
-        psUpdate.setDouble(8, stats.getRecent());
-
-        psUpdate.setLong(12, appid);
-
-		Map<String,Double> map = quantileMap.get(appid);
-		if (map == null) {
-		    LOGGER.error("MISSING: " + appid + " and assuming zeros");
-		    psUpdate.setDouble(4, 0);
-		    psUpdate.setDouble(5, 0);
-		    psUpdate.setDouble(6, 0);
-            psUpdate.setDouble(9, 0);
-            psUpdate.setDouble(10, 0);
-            psUpdate.setDouble(11, 0);
-		} else { 
-            psUpdate.setDouble(4, map.get("total-q25"));
-            psUpdate.setDouble(5, map.get("total-q75"));
-            psUpdate.setDouble(6, map.get("total-median"));
-
-            Double q25 = map.get("recent-q25");
-            psUpdate.setDouble(9, q25 == null ? 0.0 : q25);
-
-            Double q75 = map.get("recent-q75");
-            psUpdate.setDouble(10, q75 == null ? 0.0 : q75);
-            
-            Double median = map.get("recent-median");
-            psUpdate.setDouble(11, median == null ? 0.0 : median);
-		}
-		int affected = psUpdate.executeUpdate();
-		LOGGER.debug("..." + affected);
-		if (affected == 0) { 
-			LOGGER.error("missing: " + appid);
-		}
+//		LOGGER.info("updating: " + appid);
+//		psUpdate.setLong(1, stats.getOwned());
+//		psUpdate.setLong(2, stats.getNotPlayed());
+//		psUpdate.setDouble(3, stats.getTotal());
+//
+//        psUpdate.setLong(7, stats.getPlayedRecently());
+//        psUpdate.setDouble(8, stats.getRecent());
+//
+//        psUpdate.setLong(12, appid);
+//
+//		Map<String,Double> map = quantileMap.get(appid);
+//		if (map == null) {
+//		    LOGGER.error("MISSING: " + appid + " and assuming zeros");
+//		    psUpdate.setDouble(4, 0);
+//		    psUpdate.setDouble(5, 0);
+//		    psUpdate.setDouble(6, 0);
+//            psUpdate.setDouble(9, 0);
+//            psUpdate.setDouble(10, 0);
+//            psUpdate.setDouble(11, 0);
+//		} else { 
+//            psUpdate.setDouble(4, map.get("total-q25"));
+//            psUpdate.setDouble(5, map.get("total-q75"));
+//            psUpdate.setDouble(6, map.get("total-median"));
+//
+//            Double q25 = map.get("recent-q25");
+//            psUpdate.setDouble(9, q25 == null ? 0.0 : q25);
+//
+//            Double q75 = map.get("recent-q75");
+//            psUpdate.setDouble(10, q75 == null ? 0.0 : q75);
+//            
+//            Double median = map.get("recent-median");
+//            psUpdate.setDouble(11, median == null ? 0.0 : median);
+//		}
+//		int affected = psUpdate.executeUpdate();
+//		LOGGER.debug("..." + affected);
+//		if (affected == 0) { 
+//			LOGGER.error("missing: " + appid);
+//		}
 	}
 	
 	public void connect() throws Exception { 
