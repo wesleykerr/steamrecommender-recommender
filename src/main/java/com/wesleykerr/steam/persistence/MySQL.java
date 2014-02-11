@@ -152,9 +152,13 @@ public class MySQL {
     }
 
     public static MySQL getDreamhost() { 
+    	return getDatabase("config/mysql.properties");
+    }
+    
+    public static MySQL getDatabase(String configFile) { 
         try { 
             Properties prop = new Properties();
-            InputStream input = new FileInputStream("config/mysql.properties");
+            InputStream input = new FileInputStream(configFile);
             prop.load(input);
 
             MySQL mySQL = new MySQL();
