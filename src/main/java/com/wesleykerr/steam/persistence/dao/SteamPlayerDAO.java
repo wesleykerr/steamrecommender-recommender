@@ -14,7 +14,14 @@ public interface SteamPlayerDAO {
 	 * @return false if the steam id already exists.
 	 */
 	public boolean addSteamId(long steamId);
-	
+
+	/**
+	 * Check for the existence of a steam id.
+	 * @param steamId
+	 * @return
+	 */
+	public boolean exists(long steamId);
+		
 	/**
      * Update the steam id with the information
      * given.
