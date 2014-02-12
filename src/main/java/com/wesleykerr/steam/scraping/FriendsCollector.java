@@ -102,10 +102,12 @@ public class FriendsCollector {
                 }
                 
                 for (Relationship r : friends) { 
-                    boolean added = steamPlayerDAO.addSteamId(Long.parseLong(r.getSteamid()));
-                    operationsCounter.incrCounter();
-                    if (added) 
+                    long steamId = Long.parseLong(r.getSteamid());
+                    if (!steamPlayerDAO.exists(steamId)) {
+                        steamPlayerDAO.addSteamId(steamId);
                         playerCounterDAO.incrCounter();
+                    }
+                    operationsCounter.incrCounter();
                 }
             }
             

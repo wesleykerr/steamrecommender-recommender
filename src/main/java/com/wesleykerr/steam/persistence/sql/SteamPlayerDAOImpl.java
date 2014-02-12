@@ -21,6 +21,7 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
 
     private Connection conn;
     
+    private PreparedStatement selectPS;
     private PreparedStatement insertPS;
     
     private PreparedStatement updatePS;
@@ -45,6 +46,24 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
         }
     }
     
+    @Override
+    public boolean exists(long steamId) {
+        try { 
+            if (selectPS == null)
+                selectPS = conn.prepareStatement(SELECT);
+
+            selectPS.setLong(1, steamId);
+            try (ResultSet rs = selectPS.executeQuery()) { 
+                if (rs.next())
+                    return true;
+            }
+            
+        } catch (Exception e) { 
+            LOGGER.error("Unable to check for existence", e);
+        }
+        return false;
+    }
+
     @Override
     public void update(Player p) {
         try { 
@@ -146,6 +165,9 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             + "(steamid, revision, num_games, private, "
             + "last_updated, last_updated_friends, content) "
             + "VALUES (?,?,?,?,?,?,?)";
+    
+    public static final String SELECT = 
+            "SELECT steamid FROM steam_data.players WHERE steamid = ?";
 
     public static final String SELECT_REFRESH = 
             "SELECT content FROM steam_data.players "
@@ -160,6 +182,5 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     public static final String SELECT_FRIENDS = 
             "SELECT content FROM steam_data.players "
             + "WHERE last_updated_friends is NULL";
-
 
 }

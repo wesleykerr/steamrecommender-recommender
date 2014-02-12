@@ -41,6 +41,12 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
         }
         return false;
     }
+    
+    @Override
+    public boolean exists(long steamId) {
+        Object o = client.get(String.valueOf(steamId));
+        return o != null;
+    }
 
     @Override
     public void update(Player p) { 
