@@ -1,99 +1,101 @@
 package com.wesleykerr.steam.domain.game;
 
+import com.google.common.base.Preconditions;
+
 
 public class GameplayStats {
-	private double total;
-	private double recent;
-	private long owned;
-	private long notPlayed;
-	private long playedRecently;
+	private Double totalPlaytime;
+	private Long owned;
+	private Long notPlayed;
 
-	private double totalSquared;
-	private double recentSquared;
+	private Double q25Playtime;
+	private Double medianPlaytime;
+	private Double q75Playtime;
 
-	/**
-	 * @return the total
-	 */
-	public double getTotal() {
-		return total;
+	private GameplayStats() { 
+		totalPlaytime = 0.0;
+		owned = 0L;
+		notPlayed = 0L;
+		
+		q25Playtime = 0.0;
+		medianPlaytime = 0.0;
+		q75Playtime = 0.0;
 	}
-	/**
-	 * @param total the total to set
-	 */
-	public void setTotal(double total) {
-		this.total = total;
+
+	public Double getTotalPlaytime() {
+		return totalPlaytime;
 	}
-	/**
-	 * @return the recent
-	 */
-	public double getRecent() {
-		return recent;
-	}
-	/**
-	 * @param recent the recent to set
-	 */
-	public void setRecent(double recent) {
-		this.recent = recent;
-	}
-	/**
-	 * @return the owned
-	 */
-	public long getOwned() {
+
+
+	public Long getOwned() {
 		return owned;
 	}
-	/**
-	 * @param owned the owned to set
-	 */
-	public void setOwned(long owned) {
-		this.owned = owned;
-	}
-	/**
-	 * @return the notPlayed
-	 */
-	public long getNotPlayed() {
+
+
+	public Long getNotPlayed() {
 		return notPlayed;
 	}
-	/**
-	 * @param notPlayed the notPlayed to set
-	 */
-	public void setNotPlayed(long notPlayed) {
-		this.notPlayed = notPlayed;
+
+
+	public Double getQ25Playtime() {
+		return q25Playtime;
 	}
-	/**
-	 * @return the playedRecently
-	 */
-	public long getPlayedRecently() {
-		return playedRecently;
+
+
+	public Double getMedianPlaytime() {
+		return medianPlaytime;
 	}
-	/**
-	 * @param playedRecently the playedRecently to set
-	 */
-	public void setPlayedRecently(long playedRecently) {
-		this.playedRecently = playedRecently;
+
+
+	public Double getQ75Playtime() {
+		return q75Playtime;
 	}
-	/**
-	 * @return the totalSquared
-	 */
-	public double getTotalSquared() {
-		return totalSquared;
+
+
+	public static class Builder {
+	    private GameplayStats stats;
+
+	    private Builder() { 
+	        stats = new GameplayStats();
+	    }
+	    
+	    public void incrementPlaytime(double playtime) { 
+	    	stats.totalPlaytime += playtime;
+	    }
+	    
+		public void incrementOwned() { 
+			stats.owned += 1L;
+		}
+		
+		public void incrementNotPlayed() { 
+			stats.notPlayed += 1L;
+		}
+		
+		public Builder withQ25Playtime(Double playtime) { 
+			stats.q25Playtime = playtime;
+			return this;
+		}
+
+		public Builder withMedianPlaytime(Double playtime) { 
+			stats.medianPlaytime = playtime;
+			return this;
+		}
+
+		public Builder withQ75Playtime(Double playtime) { 
+			stats.q75Playtime = playtime;
+			return this;
+		}
+
+		public GameplayStats build() { 
+	        Preconditions.checkNotNull(stats);
+	        
+	        GameplayStats tmp = stats;
+	        stats = null;
+	        return tmp;
+	    }
+	    
+	    public static Builder create() { 
+	        return new Builder();
+	    }
 	}
-	/**
-	 * @param totalSquared the totalSquared to set
-	 */
-	public void setTotalSquared(double totalSquared) {
-		this.totalSquared = totalSquared;
-	}
-	/**
-	 * @return the recentSquared
-	 */
-	public double getRecentSquared() {
-		return recentSquared;
-	}
-	/**
-	 * @param recentSquared the recentSquared to set
-	 */
-	public void setRecentSquared(double recentSquared) {
-		this.recentSquared = recentSquared;
-	}
-	
 }

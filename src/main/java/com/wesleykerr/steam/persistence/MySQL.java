@@ -1,10 +1,17 @@
 package com.wesleykerr.steam.persistence;
 
+import static java.sql.ResultSet.CONCUR_READ_ONLY;
+import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.Writer;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -141,6 +148,44 @@ public class MySQL {
         }
     }
 
+    /**
+     * Stream a result set to disk without 
+     * using up all of the machines resources.
+     * @param query
+     * @param out
+     * @throws Exception
+     */
+    public void streamResultSet(String query, Writer out) throws Exception { 
+    	try (Statement stmt = conn.createStatement(TYPE_FORWARD_ONLY, CONCUR_READ_ONLY)) { 
+        	stmt.setFetchSize(Integer.MIN_VALUE);
+        	
+        	int count = 0;
+        	try (ResultSet rs = stmt.executeQuery(query)) { 
+            	LOGGER.info("...0 records processed");
+            	
+            	long accumResultSet = 0;
+            	long accumFileIO = 0;
+        		while (rs.next()) { 
+        			long start = System.nanoTime();
+        			String s = rs.getString(1);
+        			accumResultSet += (System.nanoTime() - start);
+
+        			start = System.nanoTime();
+        			out.write(s);
+        			out.write("\n");
+        			accumFileIO += (System.nanoTime() - start);
+        			
+        			++count;
+        			if (count % 10000 == 0) {
+        				LOGGER.info("..." + count + " records processed");
+        				LOGGER.info("..... " + accumResultSet + " ... " + accumFileIO);
+        			}
+        		}
+            	LOGGER.info("..." + count + " records processed");
+        	}
+    	}
+    }
+
     public static MySQL getLocalhost() { 
         MySQL mySQL = new MySQL();
         mySQL.setHost("localhost");
@@ -173,5 +218,8 @@ public class MySQL {
             LOGGER.error("Unable to load the database");
             throw new RuntimeException(e);
         }
+    }
+    
+    public static void main(String[] args) throws Exception { 
     }
 }
