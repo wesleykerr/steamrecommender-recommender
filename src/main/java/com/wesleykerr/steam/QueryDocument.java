@@ -118,32 +118,32 @@ public class QueryDocument {
 		do { 
 			try { 
 	        	HttpGet httpget = new HttpGet(uri);
-	        	httpget.setHeader("User-Agent", userAgent);
-	        	HttpResponse response = httpClient.execute(httpget);
-	        	counter.incrCounter();
-
-	        	if (response.getStatusLine().getStatusCode() == 500) {
-	        	    EntityUtils.consume(response.getEntity());
-	        		LOGGER.warn("Server Error: " + response.toString());
-					++retries;
-					Utils.delay(retries*1000);
-	        	} else { 
-		        	HttpEntity entity = response.getEntity();
-		 	       
-		        	if (entity != null) { 
-		            	try { 
-		            	    JsonParser parser = new JsonParser();
-		            	    JsonElement element = parser.parse(new InputStreamReader(entity.getContent()));
-		            		if (element == null) {
-		        	    		LOGGER.error("ERROR - empty content" + response.toString());
-		            			return null;
-		            		}
-		            		jsonObj = element.getAsJsonObject();
-		        		} finally { 
-		        			entity.getContent().close();
-		        		}
-		        	}
-	        	}
+	        	httpget.addHeader("User-Agent", userAgent);
+                try (CloseableHttpResponse response = httpClient.execute(httpget)) {
+                    counter.incrCounter();
+                    if (response.getStatusLine().getStatusCode() == 500) {
+                        EntityUtils.consume(response.getEntity());
+                        LOGGER.warn("Server Error: " + response.toString());
+                        ++retries;
+                        Utils.delay(retries*1000);
+                    } else { 
+                        HttpEntity entity = response.getEntity();
+                       
+                        if (entity != null) { 
+                            try { 
+                                JsonParser parser = new JsonParser();
+                                JsonElement element = parser.parse(new InputStreamReader(entity.getContent()));
+                                if (element == null) {
+                                    LOGGER.error("ERROR - empty content" + response.toString());
+                                    return null;
+                                }
+                                jsonObj = element.getAsJsonObject();
+                            } finally { 
+                                entity.getContent().close();
+                            }
+                        }
+                    }
+                }
 	    	} catch (Exception e) { 
 	    		LOGGER.error("requestJSON " + e.getMessage(), e);
 				++retries;
