@@ -5,11 +5,11 @@ import java.io.InputStreamReader;
 import java.net.URI;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultRedirectHandler;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
@@ -68,12 +68,15 @@ public class QueryDocument {
                 httpget.setConfig(requestConfig);
                 httpget.addHeader("User-Agent", userAgent);
                 try (CloseableHttpResponse response = httpClient.execute(httpget)) {
-                    if (response.getStatusLine().getStatusCode() == 200) {
-                        return true;
-                    } 
-                    
-                    LOGGER.info("Failed to get " + url);
-                    LOGGER.info("Recieved: " + response.getStatusLine().toString());
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    switch (statusCode) {
+                        case 200:
+                            return true;
+                        case 404:
+                            return false;
+                        default:
+                            LOGGER.info("Unknown: " + response.getStatusLine());
+                    }
                     ++retries;
                 } 
             } catch (Exception e) { 
@@ -83,6 +86,46 @@ public class QueryDocument {
         } while (retries < maxRetries);
         return false;
 	}
+	
+	/**
+     * Check to see if a document exists on the web or is being
+     * redirected.
+     * @param url
+     * @param maxRetries
+     * @return null if no redirect or not found, otherwise we return
+     *      the redirect.
+     */
+    public String getRedirectUrl(String url, String userAgent, int maxRetries) { 
+        int retries = 0;
+        do { 
+            try { 
+                HttpGet httpget = new HttpGet(url);
+                RequestConfig myRequestConfig = RequestConfig.copy(requestConfig)
+                        .setRedirectsEnabled(false)
+                        .build();
+                httpget.setConfig(myRequestConfig);
+                httpget.addHeader("User-Agent", userAgent);
+                try (CloseableHttpResponse response = httpClient.execute(httpget)) {
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    switch (statusCode) {
+                        case 200:
+                        case 404:
+                            return null;
+                        case 302:
+                            return response.getFirstHeader("Location").getValue();
+                        default:
+                            LOGGER.info("Unknown: " + response.getStatusLine());
+                    }
+                    ++retries;
+                } 
+            } catch (Exception e) { 
+                LOGGER.error("Failed...." + e.getMessage(), e);
+                ++retries;
+            }
+        } while (retries < maxRetries);
+        return null;
+    }
+
 	
 	/**
 	 * Gather the document from the web.

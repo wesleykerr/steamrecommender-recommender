@@ -16,6 +16,13 @@ public interface GamesDAO {
     Game get(long appid) throws Exception;
     
     /**
+     * Retrieve all of the appids that we know about.
+     * @return
+     * @throws Exception
+     */
+    List<Game> getAll() throws Exception;
+    
+    /**
      * Set the recommendations for the given game.
      * @param appid
      * @param recomms
@@ -31,7 +38,7 @@ public interface GamesDAO {
      * @throws Exception
      */
     void updateOrAddStats(long appid, GameplayStats stats) throws Exception;
-    
+
     /**
      * Returns a list of games that need to have their images checked.
      * @return
@@ -45,4 +52,11 @@ public interface GamesDAO {
      * @throws Exception
      */
     void updateUrlDetails(Game game) throws Exception;
+    
+    /**
+     * Returns a list of games that are owned and played.
+     * @return
+     * @throws Exception
+     */
+    List<Game> getGamesOwnedOrPlayed() throws Exception;
 }

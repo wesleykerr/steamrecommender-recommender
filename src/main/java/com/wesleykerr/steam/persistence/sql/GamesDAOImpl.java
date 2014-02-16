@@ -100,6 +100,19 @@ public class GamesDAOImpl implements GamesDAO {
     }
     
     @Override
+    public List<Game> getAll() throws Exception {
+        try (Statement statement = conn.createStatement();
+                ResultSet rs = statement.executeQuery(GET_ALL)) { 
+
+            List<Game> games = Lists.newArrayList();
+            while (rs.next()) { 
+                games.add(toGame(rs));
+            }
+            return games;
+        }
+    }
+
+    @Override
     public List<Game> getGamesForImageUpdate() throws Exception {
         try (Statement statement = conn.createStatement();
                 ResultSet rs = statement.executeQuery(GET_IMAGE_UPDATE)) { 
@@ -111,7 +124,18 @@ public class GamesDAOImpl implements GamesDAO {
             return games;
         }
     }
-    
+
+    @Override
+    public List<Game> getGamesOwnedOrPlayed() throws Exception {
+        try (Statement statement = conn.createStatement();
+                ResultSet rs = statement.executeQuery(GET_OWNED_AND_PLAYED)) {
+            List<Game> games = Lists.newArrayList();
+            while (rs.next())
+                games.add(toGame(rs));
+            return games;
+        }
+    }
+
     @Override
     public void setRecomms(long appid, String recomms) throws Exception {
         if (setRecommsPS == null) 
@@ -148,8 +172,8 @@ public class GamesDAOImpl implements GamesDAO {
         if (updateUrlPS == null) 
             updateUrlPS = conn.prepareStatement(UPDATE_URLS);
         
-        updateUrlPS.setString(1, game.getSteamURL());
-        updateUrlPS.setString(2, game.getSteamImgURL());
+        updateUrlPS.setString(1, game.getSteamImgURL());
+        updateUrlPS.setString(2, game.getSteamURL());
         updateUrlPS.setLong(3, game.getAppid());
         int updated = updateUrlPS.executeUpdate();
         if (updated == 0)
@@ -159,6 +183,10 @@ public class GamesDAOImpl implements GamesDAO {
 
     private static String GET = 
             "select * from game_recommender.games where appid = ?";
+
+    private static String GET_ALL = 
+            "select * from game_recommender.games";
+    
     private static String SET_RECOMMS = 
             "update game_recommender.games set recomms = ? where appid = ?";
 
@@ -174,8 +202,12 @@ public class GamesDAOImpl implements GamesDAO {
             + "  where (last_checked is null or last_checked <= CURRENT_DATE - 7)) a "
             + "where hash_value = DAYOFWEEK(current_date);";
     
+    private static final String GET_OWNED_AND_PLAYED = 
+            "select * from game_recommender.games where owned > 0 and total_playtime > 0";
+    
     private static final String UPDATE_URLS = 
             "update game_recommender.games "
             + "set steam_img_url = ?, steam_url = ?, last_checked = CURRENT_TIMESTAMP "
             + "where appid = ?";
+
 }
