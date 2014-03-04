@@ -152,7 +152,7 @@ public class UpdateSteamDataset {
 	        return;
 	    }
 	    
-        File lockFile = new File("/tmp/PushPlaytime.lock");
+        File lockFile = new File("/tmp/UpdateSteamDataset.lock");
         if (lockFile.exists()) { 
             LOGGER.info("Process already running [" + lockFile.toString() + "]");
             throw new RuntimeException("Process already running!");
