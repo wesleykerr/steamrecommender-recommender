@@ -9,6 +9,10 @@ public class ETLDetails {
 	
 	int numFriends;
 	
+	int playerCount;
+	int privateCount;
+	int newPlayersCount;
+	
 	private ETLDetails() { 
 		
 	}
@@ -28,7 +32,20 @@ public class ETLDetails {
 	public int getNumFriends() { 
 		return numFriends;
 	}
-	
+
+	public int getPlayerCount() {
+		return playerCount;
+	}
+
+	public int getPrivateCount() {
+		return privateCount;
+	}
+
+	public int getNewPlayersCount() {
+		return newPlayersCount;
+	}
+
+
 	public static class Builder {
 		private ETLDetails details;
 		
@@ -53,6 +70,21 @@ public class ETLDetails {
 		
 		public Builder withNumFriends(int numFriends) { 
 			details.numFriends = numFriends;
+			return this;
+		}
+		
+		public Builder withPlayerCount(int playerCount) { 
+			details.playerCount = playerCount;
+			return this;
+		}
+		
+		public Builder withPrivateCount(int privateCount) { 
+			details.privateCount = privateCount;
+			return this;
+		}
+		
+		public Builder withNewPlayersCount(int newPlayersCount) { 
+			details.newPlayersCount = newPlayersCount;
 			return this;
 		}
 		

@@ -15,7 +15,7 @@ public class JobDetails {
 	}
 	
 	public List<String> getFailedJobs() { 
-		return ImmutableList.copyOf(failedJobs);
+		return failedJobs;
 	}
 	
 	public static class Builder {
@@ -38,7 +38,7 @@ public class JobDetails {
 		public JobDetails build() { 
 			Preconditions.checkNotNull(details);
 			JobDetails tmp = details;
-			tmp = null;
+			details = null;
 			return tmp;
 			
 		}

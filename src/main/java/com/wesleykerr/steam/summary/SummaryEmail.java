@@ -6,6 +6,7 @@ import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -18,6 +19,10 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.wesleykerr.steam.persistence.MySQL;
 import com.wesleykerr.steam.summary.domain.ETLDetails;
@@ -25,17 +30,21 @@ import com.wesleykerr.steam.summary.domain.JobDetails;
 import com.wesleykerr.steam.summary.domain.SiteDetails;
 
 public class SummaryEmail {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SummaryEmail.class);
 
-
-	private int getRowCount(Statement s, String tableName, String date) throws Exception {
-		String query = "select count(0) from " + tableName + 
-				" where create_datetime >= '" + date + "';";
+	private int query(Statement s, String query) throws Exception { 
 		try (ResultSet rs = s.executeQuery(query)) { 
 			if (rs.next()) { 
 				return rs.getInt(1);
 			}
 		}
 		return 0;
+	}
+	
+	private int getRowCount(Statement s, String tableName, String date) throws Exception {
+		String query = "select count(0) from " + tableName + 
+				" where create_datetime >= '" + date + "';";
+		return query(s, query);
 	}
 	
 	public SiteDetails getSiteDetails(String date) throws Exception { 
@@ -54,65 +63,133 @@ public class SummaryEmail {
 	    try (Statement s = mysql.getConnection().createStatement()) { 
 			ETLDetails.Builder builder = ETLDetails.Builder.create();
 
+			builder.withPlayerCount(query(s, 
+					"select count(0) from steam_data.players "
+					+ "where revision > 0 and private = 0"));
 			
+			builder.withPrivateCount(query(s, 
+					"select count(0) from steam_data.players "
+					+ "where private = 1"));
+			
+			builder.withNewPlayersCount(query(s, 
+					"select count(0) from steam_data.players "
+					+ "where revision = 0"));
+			
+			builder.withNumUpdated(query(s, 
+					"select count(0) from steam_data.players "
+					+ "where revision > 1 and last_updated >= '" + date + "'"));
+			
+			builder.withNumPulled(query(s, 
+					"select count(0) from steam_data.players "
+					+ "where revision = 1 and last_updated >= '" + date + "'"));
+			
+			builder.withNumFriends(query(s, 
+					"select count(0) from steam_data.friends "
+					+ "where last_updated >= '" + date + "'"));
 			return builder.build();
 	    }
 	}
 	
 	public JobDetails getJobDetails(String date) throws Exception { 
-		String path = "/usr/local/taskforest/logs/" + date + "/";
+		String path = "/usr/local/taskforest/logs/" + date.replaceAll("[-]", "") + "/";
 		File folder = new File(path);
 		File[] files = folder.listFiles(new FilenameFilter() {
 		    public boolean accept(File dir, String name) {
-		    	// TODO replace with actuall test we want to perform...
-		        return name.toLowerCase().endsWith(".txt");
+		    	boolean accept = name.toLowerCase().matches(".*[.][1-9]+$");
+		        return accept;
 		    }
 		});
 		
 		List<String> failedJobs = Lists.newArrayList();
 		for (File failedJob : files) { 
-			// TODO parse the job file name and get the actual job name
-			// from the family.job.success.fail
+			String[] tokens = failedJob.getName().split("[.]");
+			failedJobs.add(tokens[1]);
 		}
-		
+		Collections.sort(failedJobs);
 		return JobDetails.Builder.create().withFailedJobs(failedJobs).build();
 	}
 	
-	public String formatEmail(String date) throws Exception { 
+	
+	private String toHTMLList(List<String> keys, List<Integer> values) { 
+		Preconditions.checkArgument(keys.size() == values.size());
 		StringBuilder buf = new StringBuilder();
-		buf.append("<strong>Site Details</strong>").append("\n").append("\n");
-
-		SiteDetails siteDetails = getSiteDetails(date);
-		buf.append("# of visitors: ").append(siteDetails.getNumVisitors()).append("\n");
-		buf.append("# of profiles: ").append(siteDetails.getNumProfiles()).append("\n");
-		buf.append("# of recomms: ").append(siteDetails.getNumRecomms()).append("\n");
-		buf.append("\n");
-		
-		buf.append("<strong>ETL Information</strong>").append("\n").append("\n");
-		
-		ETLDetails etl = getETLDetails(date);
-		buf.append("# of accounts updated: ").append(etl.getNumUpdated()).append("\n");
-		buf.append("# of accounts first pull: ").append(etl.getNumPulled()).append("\n");
-		buf.append("# of accounts found: ").append(etl.getNumFound()).append("\n");
-		buf.append("\n");
-
-		buf.append("# of friends added: ").append(etl.getNumFriends()).append("\n");
-		buf.append("\n");
-		
-		buf.append("<strong>Failed Jobs</strong>").append("\n").append("\n");
-		
 		buf.append("<ul>").append("\n");
-		JobDetails job = getJobDetails(date);
-		for (String s : job.getFailedJobs()) {
-			buf.append("<li>").append(s).append("\n");
+		for (int i = 0; i < keys.size(); ++i) { 
+			buf.append("<li><strong>").append(keys.get(i)).append("</strong>:");
+			buf.append(values.get(i)).append("\n");
 		}
 		buf.append("</ul>").append("\n");
 		return buf.toString();
 	}
 	
+	private String toHTMLHeader(String name) { 
+		StringBuilder buf = new StringBuilder();
+		buf.append("<h2>").append(name).append("</h2>");
+		buf.append("\n").append("\n");
+		return buf.toString();
+	}
+	
+	public String formatEmail(String date) throws Exception { 
+		StringBuilder buf = new StringBuilder();
+		buf.append(toHTMLHeader("Site Details"));
+
+		SiteDetails siteDetails = getSiteDetails(date);
+		buf.append(toHTMLList(
+				Lists.newArrayList("# of visitors", "# of profiles", "# of recomms"),
+				Lists.newArrayList(
+						siteDetails.getNumVisitors(), 
+						siteDetails.getNumProfiles(), 
+						siteDetails.getNumRecomms())
+		));
+		
+		buf.append(toHTMLHeader("ETL Information"));
+		
+		ETLDetails etl = getETLDetails(date);
+		buf.append(toHTMLList(
+				Lists.newArrayList(
+						"Total Player Count", 
+						"New Player Count", 
+						"Private Player Count"),
+				Lists.newArrayList(
+						etl.getPlayerCount(), 
+						etl.getNewPlayersCount(), 
+						etl.getPrivateCount())
+		));
+									
+		buf.append(toHTMLList(
+				Lists.newArrayList(
+						"# of accounts updated", 
+						"# of accounts first pull", 
+						"# of accounts found",
+						"# of friends added"),
+				Lists.newArrayList(
+						etl.getNumUpdated(), 
+						etl.getNumPulled(), 
+						etl.getNumFound(), 
+						etl.getNumFriends())
+		));
+				
+		JobDetails job = getJobDetails(date);
+		if (!job.getFailedJobs().isEmpty()) {
+			buf.append(toHTMLHeader("Failed Jobs"));
+			buf.append("<ul>").append("\n");
+			for (String s : job.getFailedJobs()) {
+				buf.append("<li>").append(s).append("\n");
+			}
+			buf.append("</ul>").append("\n");
+		}
+		return buf.toString();
+	}
+	
 	public static void main(String[] args) throws Exception { 
+        if (args.length != 1) {
+            System.out.println("Usage: SummaryEmail <date>");
+            System.exit(0);
+        }
+        String date = args[0];
+		
 		SummaryEmail summary = new SummaryEmail();
-		String body = summary.formatEmail("2012-02-02");
+		String body = summary.formatEmail(date);
 
 		Properties prop = new Properties();
 		InputStream input = new FileInputStream("config/email.properties");
@@ -141,7 +218,7 @@ public class SummaryEmail {
 			message.setFrom(new InternetAddress(username));
 			message.setRecipients(Message.RecipientType.TO,
 					InternetAddress.parse(toAddress));
-			message.setSubject("[SteamRecommender] Report");
+			message.setSubject("[SteamRecommender] " + date + " Report");
 			message.setText(body, "utf-8", "html");
 
 			Transport.send(message);
