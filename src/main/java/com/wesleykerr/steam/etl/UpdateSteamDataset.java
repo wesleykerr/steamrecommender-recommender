@@ -30,9 +30,9 @@ import com.wesleykerr.utils.GsonUtils;
 public class UpdateSteamDataset {
     private static final Logger LOGGER = LoggerFactory.getLogger(UpdateSteamDataset.class);
 
-    private static final String STORE_URL = "http://store.steampowered.com/app/";
-    private static final String IMAGE_URL = "http://cdn2.steampowered.com/v/gfx/apps/%d/header_292x136.jpg";
-    private static final String DEFAULT_IMG_URL = "http://www.steamrecommender.com/img/applogo.gif";
+    public static final String STORE_URL = "http://store.steampowered.com/app/";
+    public static final String IMAGE_URL = "http://cdn2.steampowered.com/v/gfx/apps/%d/header_292x136.jpg";
+    public static final String DEFAULT_IMG_URL = "http://www.steamrecommender.com/img/applogo.gif";
 
 	private Map<Long,DescriptiveStatistics> playtimeMap;
 	private Map<Long,GameplayStats.Builder> gameStats;
@@ -131,13 +131,20 @@ public class UpdateSteamDataset {
         List<Game> games = gamesDAO.getGamesForImageUpdate();
         for (Game game : games)  {
             LOGGER.info("Game " + game.getAppid() + " : " + game.getTitle());
-            if (queryDoc.checkIfExists(STORE_URL+game.getAppid(), userAgent, 2)) {
-                game.setSteamURL(STORE_URL + game.getAppid());
+            String storeUrl = STORE_URL+game.getAppid();
+            if (queryDoc.checkIfExists(storeUrl, userAgent, 2)) {
+                String redirectUrl = queryDoc.getRedirectUrl(storeUrl, userAgent, 2);
+                if (redirectUrl == null)
+                    game.setSteamURL(storeUrl);
+                else {
+                    game.setSteamURL(redirectUrl);
+                    LOGGER.info("Redirected: " + redirectUrl);
+                }
             }
             
-            String url = String.format(IMAGE_URL, game.getAppid());
-            if (queryDoc.checkIfExists(url, userAgent, 2)) { 
-                game.setSteamImgURL(url);
+            String imageUrl = String.format(IMAGE_URL, game.getAppid());
+            if (queryDoc.checkIfExists(imageUrl, userAgent, 2)) { 
+                game.setSteamImgURL(imageUrl);
             } else { 
                 game.setSteamImgURL(DEFAULT_IMG_URL);
             }
@@ -160,7 +167,7 @@ public class UpdateSteamDataset {
         lockFile.createNewFile();
         lockFile.deleteOnExit();
 	    
-        MySQL mysql = MySQL.getDreamhost();
+        MySQL mysql = MySQL.getLocalhost();
         GamesDAO gamesDAO = new GamesDAOImpl(mysql.getConnection());
 
         UpdateSteamDataset dataset = new UpdateSteamDataset();
