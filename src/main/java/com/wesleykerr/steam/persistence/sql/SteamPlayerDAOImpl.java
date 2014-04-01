@@ -37,7 +37,13 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
             if (insertPS == null)  
                 insertPS = conn.prepareStatement(INSERT);
             
+            Player p = Player.Builder.create()
+                    .withSteamId(steamId)
+                    .withRevision(0)
+                    .build();
+
             insertPS.setLong(1, steamId);
+            insertPS.setString(2, GsonUtils.getDefaultGson().toJson(p));
             insertPS.executeUpdate();
             return true;
         } catch (Exception e) {
@@ -157,8 +163,8 @@ public class SteamPlayerDAOImpl implements SteamPlayerDAO {
     }
     
     public static final String INSERT = 
-            "INSERT INTO steam_data.audit_players (steamid, revision, last_updated) " + 
-            " VALUES (?, 0, '1990-01-01 00:00:00'); ";
+            "INSERT INTO steam_data.audit_players (steamid, revision, last_updated, content) " + 
+            " VALUES (?, 0, '1990-01-01 00:00:00', ?); ";
     
     public static final String UPDATE = 
             "INSERT INTO steam_data.audit_players "
