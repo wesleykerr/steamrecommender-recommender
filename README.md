@@ -10,6 +10,11 @@ link in /usr/local/game-recommender to point to the new release found in
 
     /repo/releases/com/wesleykerr/steam/recommender/<version>/recommender-<version>.jar
 
+If we are having ssh issues there are two things that you can do.  We need to make sure that the ssh program that we are using within maven can understand the known hosts file.  First I had to change a configuration setting in /etc/ssh/ssh_config so that the entries in the known_hosts file was not hashed.  Then I had to make sure that ssh used rsa instead of ecdsa.
+
+   ssh -oHostKeyAlgorithms='ssh-rsa' host
+
+    
 On Server Restart
 ======
 
