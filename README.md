@@ -130,8 +130,8 @@ If mysqld is included in enforce mode, then it is the one probably denying the w
         /var/log/mysql/* rw,
         /var/run/mysqld/mysqld.pid w,
         /var/run/mysqld/mysqld.sock w,
-        /data/ r,
-        /data/* rw,
+        /data/steam/ r,
+        /data/steam/* rw,
     }
 ````
 
