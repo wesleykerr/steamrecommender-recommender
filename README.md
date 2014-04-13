@@ -123,7 +123,7 @@ Recent Ubuntu Server Editions (such as 10.04) ship with AppArmor and MySQL's pro
 
 If mysqld is included in enforce mode, then it is the one probably denying the write. Entries would also be written in /var/log/messages when AppArmor blocks the writes/accesses. What you can do is edit /etc/apparmor.d/usr.sbin.mysqld and add /data/ and /data/* near the bottom like so:
 
-...
+````
     /usr/sbin/mysqld {
         ...
         /var/log/mysql/ r,
@@ -133,6 +133,7 @@ If mysqld is included in enforce mode, then it is the one probably denying the w
         /data/ r,
         /data/* rw,
     }
+````
 
 And then make AppArmor reload the profiles.
 
