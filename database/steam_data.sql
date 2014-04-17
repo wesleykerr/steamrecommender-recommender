@@ -60,3 +60,13 @@ LEFT OUTER JOIN audit_friends AS t2
         AND (t1.last_updated < t2.last_updated 
          OR (t1.last_updated = t2.last_updated AND t1.revision < t2.revision))
 WHERE t2.steamid IS NULL;
+
+--changeset wkerr:2
+create table steam_data.players_sample (
+    id bigint(20) not null primary key auto_increment,
+    steamid bigint(20) not null,
+    num_games int(11),
+    private bit(1),
+    last_updated datetime not null,
+    content longtext 
+);
