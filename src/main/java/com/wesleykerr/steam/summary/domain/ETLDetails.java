@@ -13,6 +13,9 @@ public class ETLDetails {
 	int privateCount;
 	int newPlayersCount;
 	
+	int sampledPublic;
+	int sampledPrivate;
+	
 	private ETLDetails() { 
 		
 	}
@@ -43,6 +46,15 @@ public class ETLDetails {
 
 	public int getNewPlayersCount() {
 		return newPlayersCount;
+	}
+
+
+	public int getSampledPublic() {
+		return sampledPublic;
+	}
+
+	public int getSampledPrivate() {
+		return sampledPrivate;
 	}
 
 
@@ -85,6 +97,16 @@ public class ETLDetails {
 		
 		public Builder withNewPlayersCount(int newPlayersCount) { 
 			details.newPlayersCount = newPlayersCount;
+			return this;
+		}
+		
+		public Builder withSampledPublic(int sampledPublic) { 
+			details.sampledPublic = sampledPublic;
+			return this;
+		}
+		
+		public Builder withSampledPrivate(int sampledPrivate) { 
+			details.sampledPrivate = sampledPrivate;
 			return this;
 		}
 		

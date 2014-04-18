@@ -86,6 +86,17 @@ public class SummaryEmail {
 			builder.withNumFriends(query(s, 
 					"select count(0) from steam_data.friends "
 					+ "where last_updated >= '" + date + "'"));
+			
+			builder.withSampledPrivate(query(s,
+					"select count(0) from steam_data.players_sample "
+					+ "where last_updated >= '" + date + "'" 
+					+ "and private = 1"));
+			
+			builder.withSampledPrivate(query(s,
+					"select count(0) from steam_data.players_sample "
+					+ "where last_updated >= '" + date + "'" 
+					+ "and private = 0"));
+
 			return builder.build();
 	    }
 	}

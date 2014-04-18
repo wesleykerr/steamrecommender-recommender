@@ -96,7 +96,7 @@ public class SteamAPI {
 			JsonObject obj = queryDocument.requestJSON(builder.build(), userAgent, 2);
 			JsonObject response = obj.get("response").getAsJsonObject();
 			if (!response.has("games")) {
-				LOGGER.info("Returning null for " + steamId);
+				LOGGER.debug("Returning null for " + steamId);
 				return null;
 			}
 			LOGGER.debug(obj.toString());

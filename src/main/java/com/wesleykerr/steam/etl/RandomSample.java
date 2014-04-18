@@ -36,6 +36,9 @@ public class RandomSample {
 	private QueryDocument queryDoc;
 	private SteamAPI info;
 	
+	private int privateCount;
+	private int publicCount;
+	
 	public RandomSample() throws Exception { 
         date = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 
@@ -63,10 +66,18 @@ public class RandomSample {
                 .isPrivate(list == null)
                 .withLastUpdated(date.getTimeInMillis());
         playerDAO.add(builder.build(), date);
-        Thread.currentThread().sleep(900);
+        
+        if (list == null) 
+        	++privateCount;
+        else 
+        	++publicCount;
+        Thread.currentThread().sleep(100);
 	}
 
 	public void run() throws Exception { 
+		privateCount = 0;
+		publicCount = 0;
+		
 	    MySQL mySQL = MySQL.getDatabase("config/mysql-lh.properties");
 	    SteamPlayerSampleDAO playerDAO = new SteamPlayerSampleDAOImpl(
 	    		mySQL.getConnection());
@@ -76,17 +87,19 @@ public class RandomSample {
 	        	for (int j = 0; j < BATCH_SIZE; ++j) { 
 	        		addSteamId(r, playerDAO);
 	        	}
-	            Thread.currentThread().sleep(5000);
+	            Thread.currentThread().sleep(1000);
 	            LOGGER.debug("finished batch " + i);
 	            if (i % 10 == 0) {
                     Thread.currentThread();
-                    Thread.sleep(1000*r.nextInt(30));
+                    Thread.sleep(1000*r.nextInt(10));
                 }
 	        }
 	    } finally {
 	        playerDAO.close();
 	        mySQL.disconnect();
 	    }
+	    LOGGER.info("public " + publicCount);
+	    LOGGER.info("private " + privateCount);
 	    
 	}
 	
