@@ -156,15 +156,22 @@ public class SummaryEmail {
 		buf.append(toHTMLHeader("ETL Information"));
 		
 		ETLDetails etl = getETLDetails(date);
+		
+		
 		buf.append(toHTMLList(
 				Lists.newArrayList(
 						"Total Player Count", 
 						"New Player Count", 
-						"Private Player Count"),
+						"Private Player Count", 
+						"Sampled",
+						"Private Ratio"),
 				Lists.newArrayList(
 						etl.getPlayerCount(), 
 						etl.getNewPlayersCount(), 
-						etl.getPrivateCount())
+						etl.getPrivateCount(),
+						etl.getSampledPrivate()+etl.getSampledPublic(),
+						etl.getSampledPrivate() / 
+							(etl.getSampledPublic() + etl.getSampledPrivate()))
 		));
 									
 		buf.append(toHTMLList(
