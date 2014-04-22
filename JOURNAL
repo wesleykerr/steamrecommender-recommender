@@ -1,0 +1,21 @@
+
+04/22/2014
+
+Today I started setting up the sampled data.  I had to create a new job that 
+would pull the training data out of the MySQL database into a local file that we 
+could write to.  
+
+TODO: TrainingData and Deploy model have local changes that still need to be 
+deployed.  These are the new options that take input and output files so that I 
+don't need to hardcode paths anymore.
+
+TODO: Need to deploy ml.jar which will contain domain independent ML code.  I'm 
+starting to separate out funcationality to make reuse easier.
+
+TODO: UpdateSteamDataset is probably broken in a lot of places.  Follow up to 
+make sure that it works everywhere and things are still functioning properly.
+
+Once these guys are all in place, then I can get back to the real task of trying 
+out different algorithms.  Still not certain how to do matrix factorization when 
+you have a new matrix at run time ~ i.e. you haven't seen the user in the 
+training data.
