@@ -29,8 +29,18 @@
       <name>Couchbase Maven Repository</name>
       <url>http://files.couchbase.com/maven2/</url>
     </repository>
+    <repository>
+        <id>wesleykerr</id>
+        <name>Personal Releases</name>
+        <url>scp://10.0.0.26/repo/releases</url>
+    </repository>
   </repositories>
   <dependencies>
+    <dependency>
+        <groupId>com.wesleykerr</groupId>
+        <artifactId>ml</artifactId>
+        <version>0.0.1-SNAPSHOT</version>  
+    </dependency>
   	<dependency>
   	  <groupId>com.google.guava</groupId>
   	  <artifactId>guava</artifactId>
