@@ -1,4 +1,30 @@
 
+04/23/2014
+
+Thursday: make sure to get training ready for Friday.  We are running low on time.
+
+Deployed ml-0.0.1 so now we can add it as a dependency which should make things 
+a bit easier for us going forward.  Checked in the latest versions of 
+TrainingData and Deploy so that we are up to date there.
+
+I had a thought while running this morning that may help us with the problem 
+where we have a new user that wasn't part of the training data, yet they have 
+lots of training data at run time.  I already figured that I could use SGD to 
+tease out the preference at run time, but that could potentially be slow and if 
+a user repeatedly visits, they could skew the results.
+
+My second thought is to offline do a PCA over the user x games matrix.  If I 
+reduce it to around 100 predictor variables then I could take a new user, run 
+them through the PCA in order to get their lower dimension representation and 
+from there have a trained MF model that I would not need to update, but could 
+extract recommendations from.  Needs more fleshing out, but so far, not a 
+terrible idea.
+
+TODO: There is still a bug where when I deploy using mvn:release sometimes I get 
+snapshot versions and sometimes I do not.  I need to understand what causes 
+that.  It could be that I just need to separate out the development repos from 
+the release repos. 
+
 04/22/2014
 
 Today I started setting up the sampled data.  I had to create a new job that 
