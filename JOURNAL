@@ -1,3 +1,24 @@
+04/24/2014
+
+Jesus fucking christ maven is annoying.  I cannot get it to actually deploy a
+release, but it's damn good at deploying snapshots that I don't give a shit
+about.  I'm beginning to wonder if it is because of these warnings that appear
+in the logs:
+
+[INFO] [WARNING] 'build.plugins.plugin.version' for
+org.apache.maven.plugins:maven-javadoc-plugin is missing.  
+[INFO] [WARNING] 'build.plugins.plugin.version' for 
+org.apache.maven.plugins:maven-deploy-plugin
+is missing.  
+[INFO] [WARNING] 'build.plugins.plugin.version' for
+org.apache.maven.plugins:maven-source-plugin is missing.
+
+According to Google, those shouldn't really be causing the problems that I've
+been encountering.  Of course not, why would that do what I think it should do.
+
+Definitely not a productive morning.  Didn't do any real work and instead
+fought with maven build files and wasted my fucking time.  Frustrated!
+
 
 04/23/2014
 
