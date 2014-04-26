@@ -158,11 +158,19 @@ public class UpdateSteamDataset {
     	Options options = new Options();
     	
     	@SuppressWarnings("static-access")
+		Option type = OptionBuilder
+				.withLongOpt("runType")
+				.withArgName("runType")
+				.hasArg()
+				.isRequired()
+				.create("r");
+    	options.addOption(type);
+    	
+    	@SuppressWarnings("static-access")
 		Option input = OptionBuilder
     			.withLongOpt("input")
     			.withArgName("input")
     			.hasArg()
-    			.isRequired()
     			.create("i");
     	options.addOption(input);
 
@@ -171,7 +179,6 @@ public class UpdateSteamDataset {
     			.withLongOpt("output")
     			.withArgName("output")
     			.hasArg()
-    			.isRequired()
     			.create("o");
     	options.addOption(output);
 
@@ -191,10 +198,30 @@ public class UpdateSteamDataset {
     }
 	
 	public static void main(String[] args) throws Exception { 
-	    if (args.length != 1) {
-	        LOGGER.error("Usage: UpdateSteamDataset daily/weekly");
-	        return;
-	    }
+    	Options options = getOptions();
+    	CommandLineParser parser = new BasicParser();
+    	
+        String runType = "daily";
+        String input = "/data/steam/training-data.gz";
+        String output = "data/steam/playtime";
+    	try {
+    		CommandLine line = parser.parse(options, args);
+    		if (line.hasOption("h")) {
+    			printHelp(options);
+    			System.exit(1);
+    		}
+    		runType = line.getOptionValue("r");
+    		
+    		if (line.hasOption("i")) 
+    			input = line.getOptionValue("i");
+    		
+    		if (line.hasOption("o")) 
+    			output = line.getOptionValue("o");
+    	} catch (ParseException exp) { 
+    		printHelp(options);
+    		System.exit(1);
+    	}
+	    
 	    
         File lockFile = new File("/tmp/UpdateSteamDataset.lock");
         if (lockFile.exists()) { 
@@ -208,32 +235,9 @@ public class UpdateSteamDataset {
         GamesDAO gamesDAO = new GamesDAOImpl(mysql.getConnection());
 
         UpdateSteamDataset dataset = new UpdateSteamDataset();
-        if ("daily".equals(args[0])) { 
+        if ("daily".equals(runType)) { 
             dataset.updateSteamUrls(gamesDAO, "Steam Recommender");
         } else { 
-        	Options options = getOptions();
-        	CommandLineParser parser = new BasicParser();
-        	
-            String input = "/data/steam/training-data.gz";
-            String output = "data/steam/playtime";
-        	try {
-        		CommandLine line = parser.parse(options, args);
-        		if (line.hasOption("h")) {
-        			printHelp(options);
-        			System.exit(1);
-        		}
-        		
-        		if (line.hasOption("i")) 
-        			input = line.getOptionValue("i");
-        		
-        		if (line.hasOption("o")) 
-        			output = line.getOptionValue("o");
-        	} catch (ParseException exp) { 
-        		printHelp(options);
-        		System.exit(1);
-        	}
-        	
-            
             dataset.estimatePlaytime(input);
             dataset.pushPlaytimeDetails(gamesDAO);
             dataset.savePlaytimeDetails(output);
