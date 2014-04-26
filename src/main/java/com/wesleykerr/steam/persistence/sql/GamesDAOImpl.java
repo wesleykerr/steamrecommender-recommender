@@ -15,6 +15,7 @@ import com.google.common.collect.Lists;
 import com.wesleykerr.steam.domain.game.Game;
 import com.wesleykerr.steam.domain.game.GameplayStats;
 import com.wesleykerr.steam.persistence.dao.GamesDAO;
+import com.wesleykerr.utils.GsonUtils;
 
 public class GamesDAOImpl implements GamesDAO {
     private static final Logger LOGGER = LoggerFactory.getLogger(GamesDAOImpl.class);
@@ -192,7 +193,7 @@ public class GamesDAOImpl implements GamesDAO {
 
     private static final String UPDATE = 
 			"update game_recommender.games set owned = ?, not_played = ?, " +
-			"total_playtime = ?, total_q25 = ?, total_q75 = ?, total_median = ?, " + 
+			"total_playtime = ?, total_q25 = ?, total_q75 = ?, total_median = ? " + 
 			"where appid = ?";
 
     private static final String GET_IMAGE_UPDATE = 
