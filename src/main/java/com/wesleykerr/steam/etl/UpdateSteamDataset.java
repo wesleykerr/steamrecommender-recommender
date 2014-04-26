@@ -10,6 +10,14 @@ import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,6 +154,42 @@ public class UpdateSteamDataset {
         LOGGER.info("Updated " + games.size() + " games");
 	}
 	
+    public static Options getOptions() { 
+    	Options options = new Options();
+    	
+    	@SuppressWarnings("static-access")
+		Option input = OptionBuilder
+    			.withLongOpt("input")
+    			.withArgName("input")
+    			.hasArg()
+    			.isRequired()
+    			.create("i");
+    	options.addOption(input);
+
+    	@SuppressWarnings("static-access")
+		Option output = OptionBuilder
+    			.withLongOpt("output")
+    			.withArgName("output")
+    			.hasArg()
+    			.isRequired()
+    			.create("o");
+    	options.addOption(output);
+
+    	@SuppressWarnings("static-access")
+    	Option help = OptionBuilder
+    			.withLongOpt("help")
+    			.withArgName("help")
+    			.create("h");
+    	options.addOption(help);
+
+    	return options;
+    }
+    
+    public static void printHelp(Options options) { 
+    	HelpFormatter formatter = new HelpFormatter();
+    	formatter.printHelp( "UpdateSteamDataset", options );
+    }
+	
 	public static void main(String[] args) throws Exception { 
 	    if (args.length != 1) {
 	        LOGGER.error("Usage: UpdateSteamDataset daily/weekly");
@@ -167,11 +211,32 @@ public class UpdateSteamDataset {
         if ("daily".equals(args[0])) { 
             dataset.updateSteamUrls(gamesDAO, "Steam Recommender");
         } else { 
-            String file = "/data/steam/training-data.gz";
+        	Options options = getOptions();
+        	CommandLineParser parser = new BasicParser();
+        	
+            String input = "/data/steam/training-data.gz";
+            String output = "data/steam/playtime";
+        	try {
+        		CommandLine line = parser.parse(options, args);
+        		if (line.hasOption("h")) {
+        			printHelp(options);
+        			System.exit(1);
+        		}
+        		
+        		if (line.hasOption("i")) 
+        			input = line.getOptionValue("i");
+        		
+        		if (line.hasOption("o")) 
+        			output = line.getOptionValue("o");
+        	} catch (ParseException exp) { 
+        		printHelp(options);
+        		System.exit(1);
+        	}
+        	
             
-            dataset.estimatePlaytime(file);
+            dataset.estimatePlaytime(input);
             dataset.pushPlaytimeDetails(gamesDAO);
-            dataset.savePlaytimeDetails("/data/steam/playtime");
+            dataset.savePlaytimeDetails(output);
         }
 	}
 }
