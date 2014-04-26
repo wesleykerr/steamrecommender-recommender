@@ -1,3 +1,21 @@
+04/26/2014
+
+I'm a little nervous about the UpdateSteamDataset process and when it updates playtime estimates, because it is not clearing out old data.  There are two potential ways to handle this.  
+
+1.  We could set all playtime information to null prior to running the query.  
+2.  We could keep track of the ones we updated, and run a second query that would set all that were not updated to null.
+
+I like number two because if it fails then we still have data whereas if we fail during the update process for number one we don't have anything to fall back to because we wiped it all away.  I guess we could got to backups in order to get things back.
+
+Speaking of backups, need to make sure that they are running...
+
+04/25/2014
+
+Ran out of time this morning.  
+
+TODO: redeploy recommender in order to get the right DeployModel version.
+TODO: schedule sample_training to run on Saturday.
+
 04/24/2014
 
 Jesus fucking christ maven is annoying.  I cannot get it to actually deploy a
@@ -19,6 +37,9 @@ been encountering.  Of course not, why would that do what I think it should do.
 Definitely not a productive morning.  Didn't do any real work and instead
 fought with maven build files and wasted my fucking time.  Frustrated!
 
+TODO: Was running the sample_training job and it was failing because
+CollaborativeFilter expected that we would have steamId <tab> JSON.  Determine
+what the correct way is and make it work tomorrow morning.
 
 04/23/2014
 
