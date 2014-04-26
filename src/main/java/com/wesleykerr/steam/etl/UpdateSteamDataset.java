@@ -3,12 +3,15 @@ package com.wesleykerr.steam.etl;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -50,17 +53,15 @@ public class UpdateSteamDataset {
 	 * @param input
 	 * @throws Exception
 	 */
-	public void estimatePlaytime(String input) throws Exception { 
+	public void estimatePlaytime(Reader reader) throws Exception { 
 		playtimeMap = Maps.newHashMap();
 		gameStats = Maps.newHashMap();
 		
-		File inputFile = new File(input);
-		try (Reader reader = new FileReader(inputFile);
-                BufferedReader in = new BufferedReader(reader)) {
-
-			Gson gson = GsonUtils.getDefaultGson();
+		Gson gson = GsonUtils.getDefaultGson();
+		try (BufferedReader in = new BufferedReader(reader)) {
 			while (in.ready()) { 
-				Player p = gson.fromJson(in.readLine(), Player.class);
+	            String[] tokens = in.readLine().split("\t");
+				Player p = gson.fromJson(tokens[1], Player.class);
 		        for (GameStats stats : p.getGames()) {
 		        	Builder builder = gameStats.get(stats.getAppid());
 		        	if (builder == null) {
@@ -196,14 +197,27 @@ public class UpdateSteamDataset {
     	HelpFormatter formatter = new HelpFormatter();
     	formatter.printHelp( "UpdateSteamDataset", options );
     }
-	
+
+    /**
+     * Get the proper input stream if the input is compressed.
+     * @param input
+     * @return
+     * @throws Exception
+     */
+    public static InputStream getInputStream(String input) throws Exception { 
+		InputStream inStream = new FileInputStream(input);
+    	if (input.endsWith(".gz"))
+    		return new GZIPInputStream(inStream);
+    	return inStream;
+    }
+
 	public static void main(String[] args) throws Exception { 
     	Options options = getOptions();
     	CommandLineParser parser = new BasicParser();
     	
         String runType = "daily";
         String input = "/data/steam/training-data.gz";
-        String output = "data/steam/playtime";
+        String output = "/data/steam/playtime";
     	try {
     		CommandLine line = parser.parse(options, args);
     		if (line.hasOption("h")) {
@@ -238,7 +252,10 @@ public class UpdateSteamDataset {
         if ("daily".equals(runType)) { 
             dataset.updateSteamUrls(gamesDAO, "Steam Recommender");
         } else { 
-            dataset.estimatePlaytime(input);
+        	try (InputStream inputStream = getInputStream(input);
+        			Reader reader = new InputStreamReader(inputStream)) { 
+                dataset.estimatePlaytime(reader);
+        	}
             dataset.pushPlaytimeDetails(gamesDAO);
             dataset.savePlaytimeDetails(output);
         }
