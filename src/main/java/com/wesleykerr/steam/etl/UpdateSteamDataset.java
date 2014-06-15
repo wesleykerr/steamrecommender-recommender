@@ -42,7 +42,7 @@ public class UpdateSteamDataset {
     private static final Logger LOGGER = LoggerFactory.getLogger(UpdateSteamDataset.class);
 
     private static final String STORE_URL = "http://store.steampowered.com/app/";
-    private static final String IMAGE_URL = "http://cdn2.steampowered.com/v/gfx/apps/%d/header_292x136.jpg";
+    private static final String IMAGE_URL = "http://cdn.akamai.steamstatic.com/steam/apps/%d/header_292x136.jpg";
     private static final String DEFAULT_IMG_URL = "http://www.steamrecommender.com/img/applogo.gif";
 
 	private Map<Long,DescriptiveStatistics> playtimeMap;
@@ -135,9 +135,10 @@ public class UpdateSteamDataset {
 	 * @param userAgent
 	 * @throws Exception
 	 */
-	public void updateSteamUrls(GamesDAO gamesDAO, String userAgent) throws Exception { 
+	public void updateSteamUrls(GamesDAO gamesDAO, String userAgent, 
+			boolean allGames) throws Exception { 
 	    QueryDocument queryDoc = new QueryDocument();
-        List<Game> games = gamesDAO.getGamesForImageUpdate();
+        List<Game> games = gamesDAO.getGamesForImageUpdate(allGames);
         for (Game game : games)  {
             LOGGER.info("Game " + game.getAppid() + " : " + game.getTitle());
             if (queryDoc.checkIfExists(STORE_URL+game.getAppid(), userAgent, 2)) {
@@ -182,6 +183,14 @@ public class UpdateSteamDataset {
     			.hasArg()
     			.create("o");
     	options.addOption(output);
+    	
+    	@SuppressWarnings("static-access")
+    	Option allGames = OptionBuilder
+    			.withLongOpt("allGames")
+    			.withArgName("allGames")
+    			.hasArg(false)
+    			.create("a");
+    	options.addOption(allGames);
 
     	@SuppressWarnings("static-access")
     	Option help = OptionBuilder
@@ -218,6 +227,7 @@ public class UpdateSteamDataset {
         String runType = "daily";
         String input = "/data/steam/training-data.gz";
         String output = "/data/steam/playtime";
+        boolean allGames = false;
     	try {
     		CommandLine line = parser.parse(options, args);
     		if (line.hasOption("h")) {
@@ -225,6 +235,7 @@ public class UpdateSteamDataset {
     			System.exit(1);
     		}
     		runType = line.getOptionValue("r");
+    		allGames = line.hasOption("a");
     		
     		if (line.hasOption("i")) 
     			input = line.getOptionValue("i");
@@ -235,7 +246,6 @@ public class UpdateSteamDataset {
     		printHelp(options);
     		System.exit(1);
     	}
-	    
 	    
         File lockFile = new File("/tmp/UpdateSteamDataset.lock");
         if (lockFile.exists()) { 
@@ -250,7 +260,7 @@ public class UpdateSteamDataset {
 
         UpdateSteamDataset dataset = new UpdateSteamDataset();
         if ("daily".equals(runType)) { 
-            dataset.updateSteamUrls(gamesDAO, "Steam Recommender");
+            dataset.updateSteamUrls(gamesDAO, "Steam Recommender", allGames);
         } else { 
         	try (InputStream inputStream = getInputStream(input);
         			Reader reader = new InputStreamReader(inputStream)) { 

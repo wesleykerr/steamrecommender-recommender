@@ -41,10 +41,11 @@ public interface GamesDAO {
 
     /**
      * Returns a list of games that need to have their images checked.
+     * @param all - get all of the images
      * @return
      * @throws Exception
      */
-    List<Game> getGamesForImageUpdate() throws Exception;
+    List<Game> getGamesForImageUpdate(boolean all) throws Exception;
     
     /**
      * Updates the steam url details for the given game.

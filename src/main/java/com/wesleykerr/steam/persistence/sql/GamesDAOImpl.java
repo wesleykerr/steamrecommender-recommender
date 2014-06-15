@@ -68,7 +68,7 @@ public class GamesDAOImpl implements GamesDAO {
             c.setTimeInMillis(updatedTS.getTime());
             game.setUpdatedDateTime(c);
         } else { 
-            LOGGER.info("MIssing updated_datetime : " + game.getAppid());
+            LOGGER.info("Missing updated_datetime : " + game.getAppid());
         }
 
         Timestamp lastCheckedTS = rs.getTimestamp("last_checked");
@@ -114,9 +114,11 @@ public class GamesDAOImpl implements GamesDAO {
     }
 
     @Override
-    public List<Game> getGamesForImageUpdate() throws Exception {
+    public List<Game> getGamesForImageUpdate(boolean all) throws Exception {
+    	String query = GET_IMAGE_UPDATE;
+    	if (all) { query = GET_IMAGE_UPDATE_ALL; }
         try (Statement statement = conn.createStatement();
-                ResultSet rs = statement.executeQuery(GET_IMAGE_UPDATE)) { 
+                ResultSet rs = statement.executeQuery(query)) {
 
             List<Game> games = Lists.newArrayList();
             while (rs.next()) { 
@@ -196,6 +198,9 @@ public class GamesDAOImpl implements GamesDAO {
 			"total_playtime = ?, total_q25 = ?, total_q75 = ?, total_median = ? " + 
 			"where appid = ?";
 
+    private static final String GET_IMAGE_UPDATE_ALL =
+            "select * from game_recommender.games g;";
+    
     private static final String GET_IMAGE_UPDATE = 
             "select * from ("
             + "  select mod(floor(appid / 10),  7) + 1 as hash_value, g.* "
