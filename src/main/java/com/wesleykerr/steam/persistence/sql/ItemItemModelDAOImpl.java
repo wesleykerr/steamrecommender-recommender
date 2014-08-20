@@ -18,6 +18,7 @@ public class ItemItemModelDAOImpl implements ItemItemModelDAO {
     
     private PreparedStatement insertPS;
     private PreparedStatement updatePS;
+    private PreparedStatement deletePS;
     
     public ItemItemModelDAOImpl(Connection conn) {
         this.conn = conn;
@@ -51,6 +52,7 @@ public class ItemItemModelDAOImpl implements ItemItemModelDAO {
     private void prepareStatements() throws Exception { 
         insertPS = conn.prepareStatement(INSERT);
         updatePS = conn.prepareStatement(UPDATE);
+        deletePS = conn.prepareStatement(DELETE);
     }
 
     private void insert(int modelId, long columnId, String column) throws Exception { 
@@ -68,10 +70,21 @@ public class ItemItemModelDAOImpl implements ItemItemModelDAO {
         return updatePS.executeUpdate();
     }
     
+    public void delete(int modelId) throws Exception {
+        if (deletePS == null) 
+            deletePS = conn.prepareStatement(DELETE);
+
+        deletePS.setInt(1, modelId);
+        deletePS.executeUpdate();
+    }
+    
     public static final String INSERT = 
             "insert into models (model_id, appid, model_column) values (?, ?, ?)";
     public static final String UPDATE = 
             "update models set model_column = ? where model_id = ? and appid =  ?";
     public static final String GET = 
             "select model_column from models where model_id = ? and appid = ?";
+    
+    public static final String DELETE = 
+            "delete from models where model_id = ?";
 }

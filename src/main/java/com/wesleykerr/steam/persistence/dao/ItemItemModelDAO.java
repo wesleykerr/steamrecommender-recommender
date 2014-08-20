@@ -19,4 +19,12 @@ public interface ItemItemModelDAO {
      * @throws Exception
      */
     String getColumn(int modelId, long columnId) throws Exception;
+    
+    /**
+     * Remove all of the associated data for this model
+     * @param modelId
+     * @throws Exception
+     */
+    void delete(int modelId) throws Exception;
+
 }

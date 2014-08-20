@@ -42,4 +42,9 @@ public class ItemItemModelDAOImpl implements ItemItemModelDAO {
     public String getColumns(int modelId, long columnId) { 
         return map.get(modelId).get(columnId);
     }
+
+    @Override
+    public void delete(int modelId) throws Exception {
+        map.remove(modelId);
+    }
 }

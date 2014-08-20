@@ -57,6 +57,8 @@ public class DeployModel {
      * @param dao
      */
     public void deployColumns(ItemItemModelDAO dao) throws Exception { 
+        dao.delete(modelId);
+
         Joiner joiner = Joiner.on(",");
         dao.setColumn(modelId, -1L, joiner.join(columns));
         for (int col = 0; col < numItems; ++col) { 
