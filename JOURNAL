@@ -1,11 +1,33 @@
+05/29/2014
+
+Today I was able to finish up the changes for searching for steam id from the interface.  These changes have been pushed into production and will allow users to enter a community name and allow us to find them.  Occasionally it will screw up if people believe that their login name == their community name which is not true.
+
+Next week we can start working on improving the recommendations again and see what algorithms are worth implementing / playing around with.
+
+05/28/2014
+
+Another good day.  Today I've made significant process towards simplifying the login / retrieval of a player's profile.  I found two different API calls that make my life much easier.  The first will resolve a URL given a vanity name (deerslyr1) and will return the steam id of the player.  The second is a player summary that gives me all of the details like avatar, name, login status, etc.  The wiring is mostly done and all that really remains is to create a faux header that contains all of this information on the profile page and the recommendation page.  This is so that you always know whose recommendations you are receiving.  Once this is fully working we can go back to making the blogger entries and trying to get people to show up to the site.
+
+05/23/2014
+
+Been a long time since I updated my journal, probably because I haven't been able to had the desire to work on steamrecommender for a while now.  This morning I worked on resolving vanity urls with the given steam api endpoint.  The backend was easy enough to write (not checked in) and now I just need to get the front end user interface wired up and looking pretty before I can ship out this incremental change.
+
+I lost some details for one of my tasks in Google tasks.  May think about how this will affect how much I trust google tasks going forward.  Definitely also need to spend some time every day thinking about what I'm going to build next.
+
 04/26/2014
 
-I'm a little nervous about the UpdateSteamDataset process and when it updates playtime estimates, because it is not clearing out old data.  There are two potential ways to handle this.  
+I'm a little nervous about the UpdateSteamDataset process and when it updates
+playtime estimates, because it is not clearing out old data.  There are two
+potential ways to handle this.  
 
-1.  We could set all playtime information to null prior to running the query.  
-2.  We could keep track of the ones we updated, and run a second query that would set all that were not updated to null.
+1.  We could set all playtime information to null prior to running the query.
+2.  We could keep track of the ones we updated, and run a second query that
+would set all that were not updated to null.
 
-I like number two because if it fails then we still have data whereas if we fail during the update process for number one we don't have anything to fall back to because we wiped it all away.  I guess we could got to backups in order to get things back.
+I like number two because if it fails then we still have data whereas if we
+fail during the update process for number one we don't have anything to fall
+back to because we wiped it all away.  I guess we could got to backups in order
+to get things back.
 
 Speaking of backups, need to make sure that they are running...
 
@@ -78,7 +100,7 @@ deployed.  These are the new options that take input and output files so that I
 don't need to hardcode paths anymore.
 
 TODO: Need to deploy ml.jar which will contain domain independent ML code.  I'm 
-starting to separate out funcationality to make reuse easier.
+starting to separate out functionality to make reuse easier.
 
 TODO: UpdateSteamDataset is probably broken in a lot of places.  Follow up to 
 make sure that it works everywhere and things are still functioning properly.
