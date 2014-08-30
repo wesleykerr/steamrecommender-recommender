@@ -80,7 +80,7 @@ link from the latest recommender-0.0.x.jar to recommender.jar
 
 ### Couchbase
 
-Remember to bacup the couchbase cluster before doing anything. 
+Remember to backup the couchbase cluster before doing anything. 
 
 http://www.couchbase.com/docs/couchbase-manual-2.0/couchbase-backup-restore-mac.html
 
@@ -140,4 +140,3 @@ And then make AppArmor reload the profiles.
     # sudo /etc/init.d/apparmor reload
 
 WARNING: the change above will allow MySQL to read and write to the /data directory. We hope you've already considered the security implications of this.
-
