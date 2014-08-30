@@ -105,6 +105,24 @@ Backup the database
 
 ### MySQL Setup
 
+MySQL connection from macbook-pro or other machines.
+
+```
+$ sudo nano /etc/mysql/my.cnf
+```
+
+and change the line:
+
+```
+bind-address           = localhost
+```
+
+to your own internal ip address e.g. 192.168.1.20
+
+```
+bind-address           = 192.168.1.20
+```
+
 Recent Ubuntu Server Editions (such as 10.04) ship with AppArmor and MySQL's profile might be in enforcing mode by default. You can check this by executing sudo aa-status like so:
 
     # sudo aa-status
