@@ -50,8 +50,7 @@ public class ItemItemModelDAOImpl implements ItemItemModelDAO {
 
     @Override
     public int getNextModelId() throws Exception {
-        // TODO Auto-generated method stub
-        return 0;
+        return -1;
     }
 
     @Override

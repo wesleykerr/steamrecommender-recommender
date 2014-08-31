@@ -11,7 +11,6 @@ import org.junit.Test;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.wesleykerr.steam.persistence.dao.ItemItemModelDAO;
 import com.wesleykerr.steam.persistence.memory.ItemItemModelDAOImpl;
 
 public class DeployModelTest {
