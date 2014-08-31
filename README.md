@@ -80,7 +80,7 @@ link from the latest recommender-0.0.x.jar to recommender.jar
 
 ### Couchbase
 
-Remember to bacup the couchbase cluster before doing anything. 
+Remember to backup the couchbase cluster before doing anything. 
 
 http://www.couchbase.com/docs/couchbase-manual-2.0/couchbase-backup-restore-mac.html
 
@@ -104,6 +104,24 @@ Backup the database
     05 00 * * * /usr/local/bin/taskforest --config_file=/usr/local/taskforest/config/taskforest.cfg
 
 ### MySQL Setup
+
+MySQL connection from macbook-pro or other machines.
+
+```
+$ sudo nano /etc/mysql/my.cnf
+```
+
+and change the line:
+
+```
+bind-address           = localhost
+```
+
+to your own internal ip address e.g. 192.168.1.20
+
+```
+bind-address           = 192.168.1.20
+```
 
 Recent Ubuntu Server Editions (such as 10.04) ship with AppArmor and MySQL's profile might be in enforcing mode by default. You can check this by executing sudo aa-status like so:
 
@@ -140,4 +158,3 @@ And then make AppArmor reload the profiles.
     # sudo /etc/init.d/apparmor reload
 
 WARNING: the change above will allow MySQL to read and write to the /data directory. We hope you've already considered the security implications of this.
-
