@@ -158,3 +158,21 @@ And then make AppArmor reload the profiles.
     # sudo /etc/init.d/apparmor reload
 
 WARNING: the change above will allow MySQL to read and write to the /data directory. We hope you've already considered the security implications of this.
+
+### MySQL Database Restore
+
+First create the database, the restore the script.
+
+```
+mysql -u root -p
+> create database db_to_restore
+
+mysql -u [uname] -p[pass] [db_to_restore] < [backupfile.sql]
+```
+
+Setting up privileges
+
+```
+GRANT ALL PRIVILEGES ON game_recommender.* to 'recommender_etl'@'192.168.1.9';
+FLUSH PRIVILEGES;
+```
