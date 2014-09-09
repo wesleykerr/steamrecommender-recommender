@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.wesleykerr.steam</groupId>
   <artifactId>recommender</artifactId>
-  <version>0.0.32</version>
+  <version>0.0.33-SNAPSHOT</version>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -27,7 +27,7 @@
   <scm>
     <connection>scm:git:git@bitbucket.org:wesleykerr/recommender.git</connection>
     <developerConnection>scm:git:git@bitbucket.org:wesleykerr/recommender.git</developerConnection>
-    <tag>recommender-0.0.32</tag>
+    <tag>HEAD</tag>
   </scm> 
 
   <repositories>
