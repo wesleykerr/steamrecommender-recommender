@@ -201,11 +201,17 @@ public class MySQL {
     }
     
     public static MySQL getDatabase(String configFile) { 
-        try { 
-            Properties prop = new Properties();
+        Properties prop = null;
+        try {
+            prop = new Properties();
             InputStream input = new FileInputStream(configFile);
             prop.load(input);
-
+        } catch (Exception e) {
+            LOGGER.error("Unable to load: " + configFile);
+            throw new RuntimeException(e);
+        }
+        
+        try { 
             MySQL mySQL = new MySQL();
             mySQL.setHost(prop.getProperty("host"));
             mySQL.setPort(Integer.parseInt(prop.getProperty("port")));
@@ -216,6 +222,11 @@ public class MySQL {
             return mySQL;
         } catch (Exception e) { 
             LOGGER.error("Unable to load the database");
+            LOGGER.error("host: " + prop.getProperty("host"));
+            LOGGER.error("port: " + prop.getProperty("port"));
+            LOGGER.error("db: " + prop.getProperty("db"));
+            LOGGER.error("username: " + prop.getProperty("username"));
+            LOGGER.error("password: " + prop.getProperty("password"));
             throw new RuntimeException(e);
         }
     }
