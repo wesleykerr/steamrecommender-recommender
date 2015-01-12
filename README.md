@@ -14,7 +14,17 @@ If we are having ssh issues there are two things that you can do.  We need to ma
 
    ssh -oHostKeyAlgorithms='ssh-rsa' host
 
-    
+
+On Fucked Up Server
+======
+
+Probably going to have to boot in safe mode from the TV.
+If there is no `lo` interface present:
+
+```
+ifconfig lo 127.0.0.1
+```
+
 On Server Restart
 ======
 
