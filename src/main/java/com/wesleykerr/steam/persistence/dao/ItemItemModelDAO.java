@@ -36,4 +36,11 @@ public interface ItemItemModelDAO {
      * @throws Exception
      */
     void switchModels(int modelId) throws Exception;
+    
+    /**
+     * Return the model id that is currently active.
+     * @return
+     * @throws Exception
+     */
+    int getActiveModelId() throws Exception;
 }

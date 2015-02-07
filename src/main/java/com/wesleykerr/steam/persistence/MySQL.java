@@ -211,6 +211,10 @@ public class MySQL {
             throw new RuntimeException(e);
         }
         
+        return getDatabase(prop);
+    }
+    
+    public static MySQL getDatabase(Properties prop) {
         try { 
             MySQL mySQL = new MySQL();
             mySQL.setHost(prop.getProperty("host"));
@@ -221,6 +225,7 @@ public class MySQL {
             mySQL.connect();
             return mySQL;
         } catch (Exception e) { 
+            e.printStackTrace();
             LOGGER.error("Unable to load the database");
             LOGGER.error("host: " + prop.getProperty("host"));
             LOGGER.error("port: " + prop.getProperty("port"));

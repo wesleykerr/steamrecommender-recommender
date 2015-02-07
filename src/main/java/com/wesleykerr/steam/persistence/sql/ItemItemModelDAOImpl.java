@@ -121,6 +121,17 @@ public class ItemItemModelDAOImpl implements ItemItemModelDAO {
         s.close();
         return modelId;
     }
+    
+    public int getActiveModelId() throws Exception {
+        Statement s = conn.createStatement();
+        ResultSet rs = s.executeQuery(GET_ACTIVE);
+        int modelId = 1;
+        if (rs.next()) 
+            modelId = rs.getInt(1);
+        rs.close();
+        s.close();
+        return modelId;
+    }
 
     public static final String INSERT = "insert into models (model_id, appid, model_column) values (?, ?, ?)";
     public static final String UPDATE = "update models set model_column = ? where model_id = ? and appid =  ?";
@@ -130,4 +141,6 @@ public class ItemItemModelDAOImpl implements ItemItemModelDAO {
 
     public static final String INSERT_MODEL = "insert into model_status (model_id, start_date) values (?, ?)";
     public static final String UPDATE_MODEL = "update model_status set end_date = ? where end_date is null";
+
+    public static final String GET_ACTIVE = "select model_id from model_status where end_date is null";
 }

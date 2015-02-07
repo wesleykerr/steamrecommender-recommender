@@ -58,4 +58,9 @@ public class ItemItemModelDAOImpl implements ItemItemModelDAO {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public int getActiveModelId() throws Exception {
+        return -1;
+    }
 }

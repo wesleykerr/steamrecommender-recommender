@@ -62,11 +62,12 @@ public class GameRecommendations {
         gamesDAO.setRecomms(appId, gson.toJson(ordered));
     }
     
-    public void run(int modelId) throws Exception { 
+    public void run() throws Exception { 
         MySQL sql = MySQL.getDreamhost();
         GamesDAO gamesDAO = new GamesDAOImpl(sql.getConnection());
         ItemItemModelDAO cfDAO = new ItemItemModelDAOImpl(sql.getConnection());
         
+        int modelId = cfDAO.getActiveModelId();
         String[] column = cfDAO.getColumn(modelId, -1).split(",");
         List<Long> gameIds = Lists.newArrayList();
         for (String s : column) {
@@ -90,7 +91,6 @@ public class GameRecommendations {
         lockFile.deleteOnExit();
         
         GameRecommendations recomms = new GameRecommendations(4);
-        recomms.run(1);
-        
+        recomms.run();
     }
 }
