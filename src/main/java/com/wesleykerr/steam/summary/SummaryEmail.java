@@ -33,6 +33,8 @@ import com.wesleykerr.steam.summary.domain.SiteDetails;
 public class SummaryEmail {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(SummaryEmail.class);
+    
+    private static String TASKFOREST = "/steamrecommender/taskforest/logs";
 
     private int query(Statement s, String query) throws Exception {
         try (ResultSet rs = s.executeQuery(query)) {
@@ -133,8 +135,7 @@ public class SummaryEmail {
     }
 
     public JobDetails getJobDetails(String date) throws Exception {
-        String path = "/usr/local/taskforest/logs/"
-                + date.replaceAll("[-]", "") + "/";
+        String path = TASKFOREST + date.replaceAll("[-]", "") + "/";
         File folder = new File(path);
         File[] files = folder.listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
