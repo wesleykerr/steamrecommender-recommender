@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.wesleykerr.steam</groupId>
   <artifactId>recommender</artifactId>
-  <version>0.0.35-SNAPSHOT</version>
+  <version>0.0.30</version>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -12,14 +12,14 @@
       <repository>
           <id>ssh-releases</id>
           <name>ETL Server Release</name>
-          <url>scp://192.168.1.4/repo/releases</url>
+          <url>scp://173.236.255.106/steamrecommender/repo/releases</url>
           <layout>default</layout>
       </repository>
       <snapshotRepository>
         <uniqueVersion>true</uniqueVersion>
         <id>ssh-snapshots</id>
         <name>ETL Server Snapshots</name>
-        <url>scp://192.168.1.4/repo/snapshots</url>
+        <url>scp://173.236.255.106/steamrecommender/repo/snapshots</url>
         <layout>default</layout> 
       </snapshotRepository>
   </distributionManagement>
@@ -27,7 +27,7 @@
   <scm>
     <connection>scm:git:git@bitbucket.org:wesleykerr/recommender.git</connection>
     <developerConnection>scm:git:git@bitbucket.org:wesleykerr/recommender.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>recommender-0.0.30</tag>
   </scm> 
 
   <repositories>
@@ -39,7 +39,7 @@
     <repository>
         <id>wesleykerr</id>
         <name>Personal Releases</name>
-        <url>scp://192.168.1.4/repo/releases</url>
+        <url>scp://173.236.255.106/steamrecommender/repo/releases</url>
     </repository>
   </repositories>
   <dependencies>
