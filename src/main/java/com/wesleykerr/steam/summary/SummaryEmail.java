@@ -34,7 +34,7 @@ public class SummaryEmail {
     private static final Logger LOGGER = LoggerFactory
             .getLogger(SummaryEmail.class);
     
-    private static String TASKFOREST = "/steamrecommender/taskforest/logs";
+    private static String TASKFOREST = "/steamrecommender/taskforest/logs/";
 
     private int query(Statement s, String query) throws Exception {
         try (ResultSet rs = s.executeQuery(query)) {
