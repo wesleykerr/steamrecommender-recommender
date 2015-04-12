@@ -24,9 +24,9 @@ class GameLinker
     user = ENV['DB_USER'] || 'root'
     password = ENV['DB_PASSWORD'] || ''
     host = ENV['DB_HOST'] || 'localhost'
-    @log.debug { "Connecting to database with user #{user}" }
+    @log.debug { "Connecting to database #{host} with user #{user}" }
 
-    @db = Database.new("localhost", user, password)
+    @db = Database.new(host, user, password)
 
     # gather up all of the appids and when they were processed
     @update_hash = {}
