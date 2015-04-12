@@ -18,24 +18,25 @@ class GameLinker
 
     @steam = "http://store.steampowered.com/"
     @steam_api = "http://api.steampowered.com/"
-    
+
     @buffer = []
-    
-    user = ENV['recommender_user'] || 'root'
-    password = ENV['recommender_password'] || ''
+
+    user = ENV['DB_USER'] || 'root'
+    password = ENV['DB_PASSWORD'] || ''
+    host = ENV['DB_HOST'] || 'localhost'
     @log.debug { "Connecting to database with user #{user}" }
-   
-    @db = Database.new("mysql.seekerr.com", user, password) 
+
+    @db = Database.new("localhost", user, password)
 
     # gather up all of the appids and when they were processed
     @update_hash = {}
     rs = @db.query("select appid,updated_datetime from game_recommender.games")
     rs.each do |row|
-      @update_hash[row['appid']] = row['updated_datetime']  
+      @update_hash[row['appid']] = row['updated_datetime']
     end
   end
 
-  def get_apps() 
+  def get_apps()
     uri = URI("#{@steam_api}/ISteamApps/GetAppList/v0002/")
     document = Net::HTTP.get(uri)
     apps = JSON.parse(document)["applist"]["apps"]
@@ -47,37 +48,46 @@ class GameLinker
   def add_game(appid, name)
     @log.debug { "Adding game to buffer #{appid} " }
     @buffer << [appid,name]
-    flush if @buffer.size >= 10
+    flush if @buffer.size >= 1
   end
 
   def flush()
     get_app_details(@buffer) unless @buffer.size == 0
     @buffer.clear
-    sleep 5
+    sleep 1
   end
 
   def get_app_details(app_list)
     @log.debug { "Querying: #{app_list}" }
     apps = app_list.map { |appid,name| appid }.join(',')
     uri = URI("#{@steam}/api/appdetails/?appids=#{apps}")
-    game_hash = JSON.parse(Net::HTTP.get(uri))
+    @log.info { "Uri: #{uri}" }
+    response = Net::HTTP.get(uri)
+    if response.nil?
+      sleep 5
+      get_app_details(app_list)
+      return
+    end
+    @log.info { "Response: #{response}" }
+    game_hash = JSON.parse(response)
+    @log.info { "Game Hash: #{game_hash}" }
     app_list.each do |appid,name|
       @log.debug { " Results: #{appid} " }
       obj_hash = game_hash["#{appid}"]
       if obj_hash['success'] == true
         app_data = obj_hash['data']
-        update_game(appid, app_data)  
-        
-        if app_data['genres'] 
+        update_game(appid, app_data)
+
+        if app_data['genres']
           app_data['genres'].each do |genre_hash|
             add_genre(app_data['steam_appid'], genre_hash['description'])
           end
         end
       else
-        update_app(appid, name, 'unknown') 
+        update_app(appid, name, 'unknown')
         sleep 2
       end
-    end 
+    end
   end
 
   # query the database and find the time when we inserted the information about this
@@ -90,7 +100,7 @@ class GameLinker
     return (Time.now - last_update) / 86400.0
   end
 
-  # Test to see if this appid exists in the database.  
+  # Test to see if this appid exists in the database.
   # @param appid [Fixnum] the appid to check
   # @return if this row exists in the database
   def app_exists?(appid)
@@ -121,14 +131,14 @@ class GameLinker
     @log.debug { "Query: #{sql}" }
     @db.query(sql)
   end
-  
+
   # update the game with the given information
   # @param app_data [Hash] the values to update in the database
   def update_app(appid, name, app_type)
     @log.debug { "Updating: #{name}" }
     sql = "INSERT INTO game_recommender.games (appid, title, app_type, updated_datetime) "
     sql << " values (#{appid}, '#{@db.escape(name)}', '#{@db.escape(app_type)}', CURRENT_TIMESTAMP) "
-    sql << " ON DUPLICATE KEY UPDATE " 
+    sql << " ON DUPLICATE KEY UPDATE "
     sql << "   title = '#{@db.escape(name)}' "
     sql << " , app_type = '#{@db.escape(app_type)}' "
     sql << " , updated_datetime = CURRENT_TIMESTAMP "
@@ -141,14 +151,14 @@ class GameLinker
   # @param genre [String] the name of the genre to attach
   def add_genre(appid, genre)
     g_name = @db.escape(genre)
-    results = @db.query("select id from game_recommender.genres where name = '#{g_name}'") 
+    results = @db.query("select id from game_recommender.genres where name = '#{g_name}'")
     genre_id = -1
     if results.size == 0
       @db.query("insert into game_recommender.genres (name) values ('#{g_name}')")
       genre_id  = db.client.last_id
     else
       genre_id = results.first['genre_id']
-    end 
+    end
     begin
       @db.query("insert into game_recommender.genre_mappings (game_appid, genre_id) values (#{appid}, #{genre_id})")
     rescue Mysql2::Error
@@ -170,7 +180,7 @@ class GameLinker
       tables.each do |element|
         pieces = element.css('td')
         if pieces.size > 1
-          data_name = pieces[0].content 
+          data_name = pieces[0].content
           data_value = pieces[1].content
           results['steam_appid'] = data_value if data_name == 'App ID'
           results['name'] = data_value if data_name == 'Name'
@@ -193,7 +203,7 @@ class GameLinker
       else
         nil
       end
-    end.compact! 
+    end.compact!
   end
 
   def search_giantbomb(name)
@@ -209,13 +219,13 @@ class GameLinker
     games.each do |game_hash|
       title = game_hash['name']
       game_hash['score'] = DamerauLevenshtein.distance(name, title) / [name.size, title.size].max.to_r
-    end 
+    end
     games.sort! do |a,b|
       a['score'] <=> b['score']
     end
     games
   end
-    
+
   def get_giantbomb_genres(game_id)
     params = "field_list=genres"
     uri = URI("#{@gb_api}/game/#{game_id}/?api_key=#{@gb_key}&format=json&#{params}")
@@ -249,7 +259,7 @@ class GameLinker
       url = object['href']
       title = object.content.lstrip.rstrip
       @log.debug { "Name: #{name}:#{name.size} Title: #{title}:#{title.size}" }
-      @log.debug { "  Raw Distance: #{DamerauLevenshtein.distance(name,title)}, #{[name.size,title.size].max}" } 
+      @log.debug { "  Raw Distance: #{DamerauLevenshtein.distance(name,title)}, #{[name.size,title.size].max}" }
       score = DamerauLevenshtein.distance(name, title) / [name.size, title.size].max.to_f
       [url, title, score]
     end.compact!
@@ -262,16 +272,14 @@ class GameLinker
   def metacritic(appid)
     doc = Nokogiri::HTML(open("#{@steam}#{appid}"))
     metalinks = doc.css('#game_area_metalink a')
-    if metalinks.size == 1 
+    if metalinks.size == 1
       metalinks[0]['href']
     elsif metalinks.size == 0
       @log.info { "No metalink information for #{appid}" }
       nil
-    else 
+    else
       @log.warn { "Multiple metalink rows for #{appid}" }
       nil
     end
   end
 end
-
-
