@@ -162,5 +162,6 @@ Setting up privileges
 
 ```
 GRANT ALL PRIVILEGES ON game_recommender.* to 'recommender_etl'@'192.168.1.9';
+GRANT FILE on *.* to 'recommender_etl'@'localhost';
 FLUSH PRIVILEGES;
 ```
