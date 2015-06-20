@@ -15,24 +15,12 @@ If we are having ssh issues there are two things that you can do.  We need to ma
    ssh -oHostKeyAlgorithms='ssh-rsa' host
 
 
-On Fucked Up Server
-======
-
-Probably going to have to boot in safe mode from the TV.
-If there is no `lo` interface present:
-
-```
-ifconfig lo 127.0.0.1
-```
-
 On Server Restart
 ======
 
-I may change this to automount bitcasa on every run of backups just to avoid worrying about this
-in the future.
-
     nohup /usr/local/bin/taskforest --config_file=/usr/local/taskforest/config/taskforest.cfg &
     nohup /usr/local/bin/taskforestd --config_file=/usr/local/taskforest/config/taskforestd.cfg &
+
 
 Gathering Steam Players
 ======
@@ -91,25 +79,7 @@ Backup the database
 
     05 00 * * * /usr/local/bin/taskforest --config_file=/usr/local/taskforest/config/taskforest.cfg
 
-### MySQL Setup
-
-MySQL connection from macbook-pro or other machines.
-
-```
-$ sudo nano /etc/mysql/my.cnf
-```
-
-and change the line:
-
-```
-bind-address           = localhost
-```
-
-to your own internal ip address e.g. 192.168.1.20
-
-```
-bind-address           = 192.168.1.20
-```
+### MySQL 
 
 Recent Ubuntu Server Editions (such as 10.04) ship with AppArmor and MySQL's profile might be in enforcing mode by default. You can check this by executing sudo aa-status like so:
 
